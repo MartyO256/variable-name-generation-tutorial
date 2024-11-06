@@ -53,6 +53,7 @@ impl<'a> StringArena<'a> {
         reference.into_usize() < self.len()
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.strings.len()
     }
@@ -106,9 +107,9 @@ mod tests {
         assert!(i1 != i3);
         assert!(i2 != i3);
 
-        assert!(strings.get(i1) != strings.get(i2));
-        assert!(strings.get(i1) != strings.get(i3));
-        assert!(strings.get(i2) != strings.get(i3));
+        assert!(strings[i1] != strings[i2]);
+        assert!(strings[i1] != strings[i3]);
+        assert!(strings[i2] != strings[i3]);
     }
 
     #[test]
@@ -123,6 +124,6 @@ mod tests {
 
         assert!(i1 == i2);
 
-        assert!(strings.get(i1) == strings.get(i2));
+        assert!(strings[i1] == strings[i2]);
     }
 }
