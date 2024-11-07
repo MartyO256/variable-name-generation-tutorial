@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn arena_variable_creates_variable() {
         let mut strings = StringArena::new();
-        let x = strings.intern("x".as_bytes());
+        let x = strings.intern_str("x");
 
         let mut expressions = ExpressionArena::new();
 
@@ -204,7 +204,7 @@ mod tests {
     #[test]
     fn arena_abstraction_creates_abstraction() {
         let mut strings = StringArena::new();
-        let x = strings.intern("x".as_bytes());
+        let x = strings.intern_str("x");
 
         let mut expressions = ExpressionArena::new();
 
@@ -245,9 +245,9 @@ mod tests {
     #[test]
     fn arena_application_creates_application() {
         let mut strings = StringArena::new();
-        let x = strings.intern("x".as_bytes());
-        let y = strings.intern("y".as_bytes());
-        let f = strings.intern("f".as_bytes());
+        let x = strings.intern_str("x");
+        let y = strings.intern_str("y");
+        let f = strings.intern_str("f");
 
         let mut expressions = ExpressionArena::with_capacity(4);
 

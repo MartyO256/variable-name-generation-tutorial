@@ -1,6 +1,7 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
     ops::Index,
+    rc::Rc,
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -20,14 +21,14 @@ impl StringId {
     }
 }
 
-pub struct StringArena<'a> {
-    ids: HashMap<&'a [u8], StringId>,
-    strings: Vec<&'a [u8]>,
+pub struct StringArena {
+    ids: HashMap<Rc<Box<[u8]>>, StringId>,
+    strings: Vec<Rc<Box<[u8]>>>,
 }
 
-impl<'a> StringArena<'a> {
+impl StringArena {
     #[inline]
-    pub fn new() -> StringArena<'a> {
+    pub fn new() -> StringArena {
         StringArena {
             ids: HashMap::new(),
             strings: Vec::new(),
@@ -35,7 +36,7 @@ impl<'a> StringArena<'a> {
     }
 
     #[inline]
-    pub fn with_capacity(capacity: usize) -> StringArena<'a> {
+    pub fn with_capacity(capacity: usize) -> StringArena {
         StringArena {
             ids: HashMap::with_capacity(capacity),
             strings: Vec::with_capacity(capacity),
@@ -43,9 +44,9 @@ impl<'a> StringArena<'a> {
     }
 
     #[inline]
-    pub fn get(&self, reference: StringId) -> &'a [u8] {
+    pub fn get(&self, reference: StringId) -> &[u8] {
         debug_assert!(self.has(reference));
-        self.strings[reference.into_usize()]
+        &self.strings[reference.into_usize()]
     }
 
     #[inline]
@@ -58,21 +59,25 @@ impl<'a> StringArena<'a> {
         self.strings.len()
     }
 
-    pub fn intern(&mut self, value: &'a [u8]) -> StringId {
-        match self.ids.entry(value) {
+    pub fn intern(&mut self, value: &[u8]) -> StringId {
+        match self.ids.entry(Rc::new(value.to_vec().into_boxed_slice())) {
             Entry::Occupied(entry) => *entry.get(),
             Entry::Vacant(entry) => {
                 let index = self.strings.len();
                 let id = StringId::new(index);
-                self.strings.push(entry.key());
+                self.strings.push(entry.key().clone());
                 entry.insert(id);
                 id
             }
         }
     }
+
+    pub fn intern_str(&mut self, value: &str) -> StringId {
+        self.intern(value.as_bytes())
+    }
 }
 
-impl<'a> Index<StringId> for StringArena<'a> {
+impl Index<StringId> for StringArena {
     type Output = [u8];
 
     #[inline]
@@ -95,9 +100,9 @@ mod tests {
     fn assigns_unique_ids_for_different_strings() {
         let mut strings = StringArena::with_capacity(3);
 
-        let i1 = strings.intern("a".as_bytes());
-        let i2 = strings.intern("b".as_bytes());
-        let i3 = strings.intern("c".as_bytes());
+        let i1 = strings.intern_str("a");
+        let i2 = strings.intern_str("b");
+        let i3 = strings.intern_str("c");
 
         assert!(strings.has(i1));
         assert!(strings.has(i2));
@@ -116,8 +121,8 @@ mod tests {
     fn returns_same_id_for_same_strings() {
         let mut strings = StringArena::with_capacity(1);
 
-        let i1 = strings.intern("a".as_bytes());
-        let i2 = strings.intern("a".as_bytes());
+        let i1 = strings.intern_str("a");
+        let i2 = strings.intern_str("a");
 
         assert!(strings.has(i1));
         assert!(strings.has(i2));
