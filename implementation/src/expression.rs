@@ -24,7 +24,7 @@ pub enum Expression {
         index: DeBruijnIndex,
     },
     Abstraction {
-        parameter: StringId,
+        parameter: Option<StringId>,
         body: ExpressionId,
     },
     NamelessAbstraction {
@@ -122,7 +122,7 @@ impl ExpressionArena {
     }
 
     #[inline]
-    pub fn abstraction(&mut self, parameter: StringId, body: ExpressionId) -> ExpressionId {
+    pub fn abstraction(&mut self, parameter: Option<StringId>, body: ExpressionId) -> ExpressionId {
         self.add(Expression::Abstraction { parameter, body })
     }
 
@@ -209,7 +209,7 @@ mod tests {
         let mut expressions = ExpressionArena::new();
 
         let vx = expressions.variable(x);
-        let f = expressions.abstraction(x, vx);
+        let f = expressions.abstraction(Option::Some(x), vx);
 
         assert!(expressions.has(f));
         assert!(matches!(
@@ -220,7 +220,7 @@ mod tests {
             }
         ));
         if let Expression::Abstraction { parameter, body } = expressions[f] {
-            assert!(parameter == x);
+            assert!(parameter == Option::Some(x));
             assert!(body == vx);
         }
     }
