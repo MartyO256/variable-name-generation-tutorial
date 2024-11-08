@@ -1,0 +1,110 @@
+use std::{collections::HashMap, rc::Rc};
+
+use crate::{expression::DeBruijnIndex, strings::StringId};
+
+pub struct ReferencingEnvironment {
+    parent: Option<Rc<ReferencingEnvironment>>,
+    bindings_map: HashMap<StringId, Vec<usize>>,
+    size: usize,
+}
+
+impl ReferencingEnvironment {
+    #[inline]
+    pub fn new() -> ReferencingEnvironment {
+        ReferencingEnvironment {
+            parent: Option::None,
+            bindings_map: HashMap::new(),
+            size: 0,
+        }
+    }
+
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> ReferencingEnvironment {
+        ReferencingEnvironment {
+            parent: Option::None,
+            bindings_map: HashMap::with_capacity(capacity),
+            size: 0,
+        }
+    }
+
+    #[inline]
+    pub fn new_frame(refs: Rc<ReferencingEnvironment>) -> ReferencingEnvironment {
+        let size = refs.size;
+        ReferencingEnvironment {
+            parent: Option::Some(refs),
+            bindings_map: HashMap::new(),
+            size,
+        }
+    }
+
+    #[inline]
+    pub fn new_frame_with_capacity(
+        refs: Rc<ReferencingEnvironment>,
+        capacity: usize,
+    ) -> ReferencingEnvironment {
+        let size = refs.size;
+        ReferencingEnvironment {
+            parent: Option::Some(refs),
+            bindings_map: HashMap::with_capacity(capacity),
+            size,
+        }
+    }
+
+    pub fn bind(&mut self, identifier: StringId) {
+        if let Option::Some(stack) = self.bindings_map.get_mut(&identifier) {
+            stack.push(self.size);
+        } else {
+            let mut stack = Vec::new();
+            stack.push(self.size);
+            self.bindings_map.insert(identifier, stack);
+        }
+        self.shift();
+    }
+
+    pub fn unbind(&mut self, identifier: StringId) {
+        debug_assert!(self.bindings_map.contains_key(&identifier));
+        let stack = self.bindings_map.get_mut(&identifier).unwrap();
+        debug_assert!(!stack.is_empty());
+        stack.pop();
+        self.unshift();
+    }
+
+    #[inline]
+    pub fn shift(&mut self) {
+        self.size += 1;
+    }
+
+    #[inline]
+    pub fn unshift(&mut self) {
+        debug_assert!(self.size > 0);
+        self.size -= 1;
+    }
+
+    #[inline]
+    pub fn bind_option(&mut self, identifier: Option<StringId>) {
+        match identifier {
+            Option::Some(identifier) => self.bind(identifier),
+            Option::None => self.shift(),
+        }
+    }
+
+    #[inline]
+    pub fn unbind_option(&mut self, identifier: Option<StringId>) {
+        match identifier {
+            Option::Some(identifier) => self.unbind(identifier),
+            Option::None => self.unshift(),
+        }
+    }
+
+    pub fn lookup(&self, identifier: StringId) -> Option<usize> {
+        self.bindings_map
+            .get(&identifier)
+            .and_then(|stack| stack.first().copied())
+            .or_else(|| self.parent.as_ref()?.lookup(identifier))
+    }
+
+    pub fn lookup_index(&self, identifier: StringId) -> Option<DeBruijnIndex> {
+        self.lookup(identifier)
+            .map(|level| (self.size - level).into())
+    }
+}
