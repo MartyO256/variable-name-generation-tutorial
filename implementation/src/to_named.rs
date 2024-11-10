@@ -2,7 +2,6 @@ use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     rc::Rc,
-    sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -180,11 +179,19 @@ impl Store {
 
 struct StoreBuilder<'a> {
     expressions: &'a ExpressionArena,
-    bindings: &'a mut BindingStack,
-    store: &'a mut Store,
+    bindings: BindingStack,
+    store: Store,
 }
 
 impl<'a> StoreBuilder<'a> {
+    fn new(expressions: &'a ExpressionArena) -> StoreBuilder<'a> {
+        StoreBuilder {
+            expressions,
+            bindings: BindingStack::new(),
+            store: Store::new(expressions.len()),
+        }
+    }
+
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             &Expression::Variable { identifier } => {
@@ -231,17 +238,22 @@ impl<'a> StoreBuilder<'a> {
             }
         }
     }
+
+    fn into_store(self) -> Store {
+        self.store
+    }
 }
 
 pub trait FreshVariableNameGenerator {
-    fn fresh_name(&mut self, claimed: &HashSet<StringId>) -> StringId;
+    fn fresh_name(&self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
 }
 
 struct NameGeneration<'a, G: FreshVariableNameGenerator> {
+    strings: &'a mut StringArena,
     provider: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
-    store: &'a Store,
-    variable_name_generator: &'a mut G,
+    store: Store,
+    variable_name_generator: G,
 }
 
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
@@ -261,7 +273,9 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                 let reference_set = self.store.get(body);
                 let parameter = if reference_set.contains_index(1.into()) {
                     let identifiers = reference_set.names();
-                    let identifier = self.variable_name_generator.fresh_name(&identifiers);
+                    let identifier = self
+                        .variable_name_generator
+                        .fresh_name(&mut self.strings, &identifiers);
                     reference_set.select_name(1.into(), identifier);
                     Option::Some(identifier)
                 } else {
@@ -287,41 +301,35 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
 }
 
 pub fn to_named<G: FreshVariableNameGenerator>(
+    strings: &mut StringArena,
     expressions: &ExpressionArena,
     expression: ExpressionId,
     destination: &mut ExpressionArena,
-    variable_name_generator: &mut G,
+    variable_name_generator: G,
 ) -> ExpressionId {
-    let mut store = Store::new(expressions.len());
-    let mut bindings = BindingStack::new();
-    StoreBuilder {
-        expressions,
-        bindings: &mut bindings,
-        store: &mut store,
-    }
-    .visit(expression);
+    let mut store_builder = StoreBuilder::new(expressions);
+    store_builder.visit(expression);
+    let store = store_builder.into_store();
     NameGeneration {
+        strings,
         provider: expressions,
         destination,
-        store: &store,
+        store,
         variable_name_generator,
     }
     .to_named(expression)
 }
 
-pub struct SuffixVariableNameGenerator {
-    strings: Arc<Mutex<StringArena>>,
-}
+pub struct SuffixVariableNameGenerator {}
 
 impl SuffixVariableNameGenerator {
-    pub fn new(strings: Arc<Mutex<StringArena>>) -> SuffixVariableNameGenerator {
-        SuffixVariableNameGenerator { strings }
+    pub fn new() -> SuffixVariableNameGenerator {
+        SuffixVariableNameGenerator {}
     }
 }
 
 impl FreshVariableNameGenerator for SuffixVariableNameGenerator {
-    fn fresh_name(&mut self, claimed: &HashSet<StringId>) -> StringId {
-        let mut strings = self.strings.lock().unwrap();
+    fn fresh_name(&self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId {
         let mut suffix = 0;
         let mut n = strings.intern("x".as_bytes());
         while claimed.contains(&n) {
@@ -337,7 +345,10 @@ impl FreshVariableNameGenerator for SuffixVariableNameGenerator {
 #[cfg(test)]
 mod tests {
 
-    use crate::equality::equals;
+    use crate::{
+        alpha_equivalence::alpha_equivalent, equality::equals, parser::parse_expression,
+        referencing_environment::ReferencingEnvironment, to_locally_nameless::to_nameless,
+    };
 
     use super::*;
 
@@ -353,8 +364,8 @@ mod tests {
 
         let mut p2 = ExpressionArena::new();
 
-        let mut variable_namer = SuffixVariableNameGenerator::new(Arc::new(Mutex::new(strings)));
-        let named_fx_x = to_named(&p1, fx_x, &mut p2, &mut variable_namer);
+        let variable_namer = SuffixVariableNameGenerator::new();
+        let named_fx_x = to_named(&mut strings, &p1, fx_x, &mut p2, variable_namer);
 
         let mut p3 = ExpressionArena::new();
         let x = p3.variable(nx);
@@ -376,8 +387,8 @@ mod tests {
 
         let mut p2 = ExpressionArena::new();
 
-        let mut variable_namer = SuffixVariableNameGenerator::new(Arc::new(Mutex::new(strings)));
-        let named_fxy_x = to_named(&p1, fxy_x, &mut p2, &mut variable_namer);
+        let variable_namer = SuffixVariableNameGenerator::new();
+        let named_fxy_x = to_named(&mut strings, &p1, fxy_x, &mut p2, variable_namer);
 
         let mut p3 = ExpressionArena::new();
         let x = p3.variable(nx);
@@ -400,8 +411,8 @@ mod tests {
 
         let mut p2 = ExpressionArena::new();
 
-        let mut variable_namer = SuffixVariableNameGenerator::new(Arc::new(Mutex::new(strings)));
-        let named_fxy_y = to_named(&p1, fxy_y, &mut p2, &mut variable_namer);
+        let variable_namer = SuffixVariableNameGenerator::new();
+        let named_fxy_y = to_named(&mut strings, &p1, fxy_y, &mut p2, variable_namer);
 
         let mut p3 = ExpressionArena::new();
         let x = p3.variable(nx);
@@ -409,5 +420,55 @@ mod tests {
         let fxy_y = p3.abstraction(Option::None, fy_x);
 
         assert!(equals((&p2, named_fxy_y), (&p3, fxy_y)));
+    }
+
+    fn roundtrip_test(input: &str) {
+        let mut strings = StringArena::new();
+        let mut source_expressions = ExpressionArena::new();
+        let mut nameless_expressions = ExpressionArena::new();
+        let mut named_expressions = ExpressionArena::new();
+        let variable_name_generator = SuffixVariableNameGenerator::new();
+        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression =
+            parse_expression(&mut strings, &mut source_expressions, input.as_bytes()).unwrap();
+        let nameless_expression = to_nameless(
+            (
+                referencing_environment.clone(),
+                &source_expressions,
+                expression,
+            ),
+            &mut nameless_expressions,
+        );
+        let named_expression = to_named(
+            &mut strings,
+            &nameless_expressions,
+            nameless_expression,
+            &mut named_expressions,
+            variable_name_generator,
+        );
+
+        assert!(alpha_equivalent(
+            (
+                referencing_environment.clone(),
+                &source_expressions,
+                expression
+            ),
+            (
+                referencing_environment.clone(),
+                &named_expressions,
+                named_expression
+            )
+        ));
+    }
+
+    #[test]
+    fn roundtrip_tests() {
+        roundtrip_test("λx. x");
+        roundtrip_test("λy. x");
+        roundtrip_test("λx. λy. x");
+        roundtrip_test("λx. λy. y");
+        roundtrip_test("λf. λx. λy. f x");
+        roundtrip_test("λf. λx. λy. f x y");
     }
 }
