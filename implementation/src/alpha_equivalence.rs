@@ -13,12 +13,35 @@ struct AlphaEquivalence<'a> {
 }
 
 impl<'a> AlphaEquivalence<'a> {
-    pub fn alpha_equivalent(&mut self, e1: ExpressionId, e2: ExpressionId) -> bool {
+    pub fn new(
+        expressions1: &'a ExpressionArena,
+        environment1: &'a mut ReferencingEnvironment,
+        expressions2: &'a ExpressionArena,
+        environment2: &'a mut ReferencingEnvironment,
+    ) -> AlphaEquivalence<'a> {
+        AlphaEquivalence {
+            expressions1,
+            environment1,
+            expressions2,
+            environment2,
+        }
+    }
+
+    fn alpha_equivalent(&mut self, e1: ExpressionId, e2: ExpressionId) -> bool {
         match (&self.expressions1[e1], &self.expressions2[e2]) {
             (
                 &Expression::Variable { identifier: i1 },
                 &Expression::Variable { identifier: i2 },
-            ) => self.environment1.lookup_index(i1) == self.environment2.lookup_index(i2),
+            ) => {
+                match (
+                    self.environment1.lookup_index(i1),
+                    self.environment2.lookup_index(i2),
+                ) {
+                    (Option::Some(i1), Option::Some(i2)) => i1 == i2,
+                    (Option::None, Option::None) => i1 == i2,
+                    _ => false,
+                }
+            }
             (
                 &Expression::Variable { identifier: i1 },
                 &Expression::NamelessVariable { index: i2 },
@@ -119,19 +142,72 @@ impl<'a> AlphaEquivalence<'a> {
             _ => false,
         }
     }
+
+    pub fn check_alpha_equivalence(mut self, e1: ExpressionId, e2: ExpressionId) -> bool {
+        self.alpha_equivalent(e1, e2)
+    }
 }
 
-pub fn alpha_convertible(
+pub fn alpha_equivalent(
     (environment1, expressions1, e1): (Rc<ReferencingEnvironment>, &ExpressionArena, ExpressionId),
     (environment2, expressions2, e2): (Rc<ReferencingEnvironment>, &ExpressionArena, ExpressionId),
 ) -> bool {
-    let mut framed_env1 = ReferencingEnvironment::new_frame(environment1);
-    let mut framed_env2 = ReferencingEnvironment::new_frame(environment2);
-    AlphaEquivalence {
+    AlphaEquivalence::new(
         expressions1,
-        environment1: &mut framed_env1,
+        &mut ReferencingEnvironment::new_frame(environment1),
         expressions2,
-        environment2: &mut framed_env2,
+        &mut ReferencingEnvironment::new_frame(environment2),
+    )
+    .check_alpha_equivalence(e1, e2)
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{
+        alpha_equivalence::alpha_equivalent, parser::parse_mixed_expression,
+        referencing_environment::ReferencingEnvironment, strings::StringArena,
+    };
+
+    use super::*;
+
+    fn check_alpha_equivalence(input1: &str, input2: &str, expected: bool) {
+        let mut strings = StringArena::new();
+        let mut expressions = ExpressionArena::new();
+        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression1 =
+            parse_mixed_expression(&mut strings, &mut expressions, input1.as_bytes()).unwrap();
+        let expression2 =
+            parse_mixed_expression(&mut strings, &mut expressions, input2.as_bytes()).unwrap();
+
+        assert_eq!(
+            alpha_equivalent(
+                (referencing_environment.clone(), &expressions, expression1),
+                (referencing_environment.clone(), &expressions, expression2)
+            ),
+            expected
+        );
     }
-    .alpha_equivalent(e1, e2)
+
+    #[test]
+    fn alpha_equivalence_tests() {
+        check_alpha_equivalence("x", "x", true);
+        check_alpha_equivalence("λx. x", "λx. x", true);
+        check_alpha_equivalence("λx. x", "λy. y", true);
+        check_alpha_equivalence("λ. 1", "λx. x", true);
+        check_alpha_equivalence("λ. 1", "λ. 1", true);
+        check_alpha_equivalence("λ_. λx. x", "λx. λy. y", true);
+        check_alpha_equivalence("λf. λx. f x", "λg. λy. g y", true);
+
+        check_alpha_equivalence("x", "y", false);
+        check_alpha_equivalence("λx. λf. f x", "λg. λy. g y", false);
+        check_alpha_equivalence("λx. x", "λ_. y", false);
+        check_alpha_equivalence("λ. 1", "λ_. y", false);
+        check_alpha_equivalence("λ_. y", "λ. 1", false);
+        check_alpha_equivalence("x1 x2 x3", "x1 x2", false);
+        check_alpha_equivalence("(λx. x) z", "(λy. y) w", false);
+        check_alpha_equivalence("λx. x", "w", false);
+        check_alpha_equivalence("λ_. λx. x", "λ. λ. 2", false);
+    }
 }
