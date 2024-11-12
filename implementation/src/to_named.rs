@@ -342,6 +342,30 @@ impl FreshVariableNameGenerator for SuffixVariableNameGenerator {
     }
 }
 
+pub fn is_named(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
+    match &expressions[expression] {
+        &Expression::Variable { identifier: _ } => true,
+        &Expression::NamelessVariable { index: _ } => false,
+        &Expression::Abstraction { parameter: _, body } => is_named(expressions, body),
+        &Expression::NamelessAbstraction { body: _ } => false,
+        &Expression::Application {
+            function,
+            ref arguments,
+        } => {
+            if !is_named(expressions, function) {
+                false
+            } else {
+                for &argument in arguments.iter() {
+                    if !is_named(expressions, argument) {
+                        return false;
+                    }
+                }
+                true
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -447,6 +471,7 @@ mod tests {
             &mut named_expressions,
             variable_name_generator,
         );
+        assert!(is_named(&named_expressions, named_expression));
 
         assert!(alpha_equivalent(
             (

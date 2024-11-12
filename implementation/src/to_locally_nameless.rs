@@ -75,3 +75,95 @@ pub fn to_nameless(
     let mut framed_environment = ReferencingEnvironment::new_frame(environment);
     Indexing::new(&mut framed_environment, arena, destination).convert(expression)
 }
+
+pub fn is_locally_nameless(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
+    match &expressions[expression] {
+        &Expression::Variable { identifier: _ } => true,
+        &Expression::NamelessVariable { index: _ } => true,
+        &Expression::Abstraction {
+            parameter: _,
+            body: _,
+        } => false,
+        &Expression::NamelessAbstraction { body } => is_locally_nameless(expressions, body),
+        &Expression::Application {
+            function,
+            ref arguments,
+        } => {
+            if !is_locally_nameless(expressions, function) {
+                false
+            } else {
+                for &argument in arguments.iter() {
+                    if !is_locally_nameless(expressions, argument) {
+                        return false;
+                    }
+                }
+                true
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{
+        equality::equals,
+        parser::{parse_expression, parse_mixed_expression},
+        referencing_environment::ReferencingEnvironment,
+        strings::StringArena,
+        to_locally_nameless::to_nameless,
+    };
+
+    use super::*;
+
+    fn check_to_locally_nameless_structural_equality(input: &str, expected: &str) {
+        let mut strings = StringArena::new();
+        let mut parsed_expressions = ExpressionArena::new();
+        let mut converted_expressions = ExpressionArena::new();
+        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression =
+            parse_expression(&mut strings, &mut parsed_expressions, input.as_bytes()).unwrap();
+
+        let expected_expression =
+            parse_mixed_expression(&mut strings, &mut parsed_expressions, expected.as_bytes())
+                .unwrap();
+        assert!(is_locally_nameless(
+            &parsed_expressions,
+            expected_expression
+        ),);
+
+        let nameless_expression = to_nameless(
+            (
+                referencing_environment.clone(),
+                &parsed_expressions,
+                expression,
+            ),
+            &mut converted_expressions,
+        );
+        assert!(is_locally_nameless(
+            &converted_expressions,
+            nameless_expression
+        ));
+
+        assert!(equals(
+            (&converted_expressions, nameless_expression),
+            (&parsed_expressions, expected_expression)
+        ));
+    }
+
+    #[test]
+    fn converts_to_locally_nameless_representation() {
+        check_to_locally_nameless_structural_equality("x", "x");
+        check_to_locally_nameless_structural_equality("λx. x", "λ. 1");
+        check_to_locally_nameless_structural_equality("λf. x", "λ. x");
+        check_to_locally_nameless_structural_equality("λx. λy. x", "λ. λ. 2");
+        check_to_locally_nameless_structural_equality("λx. λy. y", "λ. λ. 1");
+        check_to_locally_nameless_structural_equality("λf. λx. f x", "λ. λ. 2 1");
+        check_to_locally_nameless_structural_equality(
+            "λx. λy. λz. x z (y z)",
+            "λ. λ. λ. 3 1 (2 1)",
+        );
+        check_to_locally_nameless_structural_equality("x z (y z)", "x z (y z)");
+    }
+}
