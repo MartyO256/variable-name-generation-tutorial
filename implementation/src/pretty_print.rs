@@ -154,3 +154,39 @@ pub fn to_string(
     let rendered = String::from_utf8(buffer)?;
     Result::Ok(rendered)
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::{equality::equals, parser::parse_expression};
+
+    use super::*;
+
+    fn roundabout_test(input: &str) {
+        let mut strings = StringArena::new();
+        let mut expressions = ExpressionArena::new();
+
+        let parsed_expression =
+            parse_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
+
+        let printed = to_string(&strings, &expressions, 80, parsed_expression).unwrap();
+
+        let reparsed_expression =
+            parse_expression(&mut strings, &mut expressions, printed.as_bytes()).unwrap();
+
+        assert!(equals(
+            (&expressions, parsed_expression),
+            (&expressions, reparsed_expression)
+        ));
+    }
+
+    #[test]
+    fn roundabout_tests() {
+        roundabout_test("x");
+        roundabout_test("λx. x");
+        roundabout_test("λ_. x");
+        roundabout_test("λf. λx. f x");
+        roundabout_test("λf. λx. f ((λg. g) x)");
+        roundabout_test("λx. λy. λz. x z (y z)");
+    }
+}
