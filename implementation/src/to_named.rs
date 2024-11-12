@@ -371,7 +371,7 @@ mod tests {
 
     use crate::{
         alpha_equivalence::alpha_equivalent, equality::equals, parser::parse_expression,
-        referencing_environment::ReferencingEnvironment, to_locally_nameless::to_nameless,
+        referencing_environment::ReferencingEnvironment, to_locally_nameless::to_locally_nameless,
     };
 
     use super::*;
@@ -456,7 +456,7 @@ mod tests {
 
         let expression =
             parse_expression(&mut strings, &mut source_expressions, input.as_bytes()).unwrap();
-        let nameless_expression = to_nameless(
+        let nameless_expression = to_locally_nameless(
             (
                 referencing_environment.clone(),
                 &source_expressions,

@@ -68,7 +68,7 @@ impl<'a> Indexing<'a> {
     }
 }
 
-pub fn to_nameless(
+pub fn to_locally_nameless(
     (environment, arena, expression): (Rc<ReferencingEnvironment>, &ExpressionArena, ExpressionId),
     destination: &mut ExpressionArena,
 ) -> ExpressionId {
@@ -108,10 +108,11 @@ mod tests {
 
     use crate::{
         equality::equals,
+        free_variables::free_variables,
         parser::{parse_expression, parse_mixed_expression},
         referencing_environment::ReferencingEnvironment,
         strings::StringArena,
-        to_locally_nameless::to_nameless,
+        to_locally_nameless::to_locally_nameless,
     };
 
     use super::*;
@@ -120,7 +121,7 @@ mod tests {
         let mut strings = StringArena::new();
         let mut parsed_expressions = ExpressionArena::new();
         let mut converted_expressions = ExpressionArena::new();
-        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+        let environment = Rc::new(ReferencingEnvironment::new());
 
         let expression =
             parse_expression(&mut strings, &mut parsed_expressions, input.as_bytes()).unwrap();
@@ -131,20 +132,26 @@ mod tests {
         assert!(is_locally_nameless(
             &parsed_expressions,
             expected_expression
-        ),);
+        ));
 
-        let nameless_expression = to_nameless(
-            (
-                referencing_environment.clone(),
-                &parsed_expressions,
-                expression,
-            ),
+        let nameless_expression = to_locally_nameless(
+            (environment.clone(), &parsed_expressions, expression),
             &mut converted_expressions,
         );
         assert!(is_locally_nameless(
             &converted_expressions,
             nameless_expression
         ));
+
+        assert!(
+            free_variables(environment.clone(), &parsed_expressions, expression).eq(
+                &free_variables(
+                    environment.clone(),
+                    &converted_expressions,
+                    nameless_expression
+                )
+            )
+        );
 
         assert!(equals(
             (&converted_expressions, nameless_expression),
