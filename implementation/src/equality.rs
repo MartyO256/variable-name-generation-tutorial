@@ -6,43 +6,50 @@ struct Equality<'a> {
 }
 
 impl<'a> Equality<'a> {
+    pub fn new(
+        expressions1: &'a ExpressionArena,
+        expressions2: &'a ExpressionArena,
+    ) -> Equality<'a> {
+        Equality {
+            expressions1,
+            expressions2,
+        }
+    }
+
     fn equals(&self, e1: ExpressionId, e2: ExpressionId) -> bool {
         match (&self.expressions1[e1], &self.expressions2[e2]) {
+            (Expression::Variable { identifier: i1 }, Expression::Variable { identifier: i2 }) => {
+                i1 == i2
+            }
             (
-                &Expression::Variable { identifier: i1 },
-                &Expression::Variable { identifier: i2 },
+                Expression::NamelessVariable { index: i1 },
+                Expression::NamelessVariable { index: i2 },
             ) => i1 == i2,
             (
-                &Expression::NamelessVariable { index: i1 },
-                &Expression::NamelessVariable { index: i2 },
-            ) => i1 == i2,
-            (
-                &Expression::Abstraction {
+                Expression::Abstraction {
                     parameter: param1,
                     body: b1,
                 },
-                &Expression::Abstraction {
+                Expression::Abstraction {
                     parameter: param2,
                     body: b2,
                 },
-            ) => param1 == param2 && self.equals(b1, b2),
+            ) => param1 == param2 && self.equals(*b1, *b2),
             (
-                &Expression::NamelessAbstraction { body: b1 },
-                &Expression::NamelessAbstraction { body: b2 },
-            ) => self.equals(b1, b2),
+                Expression::NamelessAbstraction { body: b1 },
+                Expression::NamelessAbstraction { body: b2 },
+            ) => self.equals(*b1, *b2),
             (
-                &Expression::Application {
+                Expression::Application {
                     function: f1,
-                    arguments: ref as1,
+                    arguments: as1,
                 },
-                &Expression::Application {
+                Expression::Application {
                     function: f2,
-                    arguments: ref as2,
+                    arguments: as2,
                 },
             ) => {
-                if as1.len() != as2.len() {
-                    false
-                } else if !self.equals(f1, f2) {
+                if as1.len() != as2.len() || !self.equals(*f1, *f2) {
                     false
                 } else {
                     for (&a1, &a2) in as1.iter().zip(as2.iter()) {
@@ -56,17 +63,17 @@ impl<'a> Equality<'a> {
             _ => false,
         }
     }
+
+    pub fn check_equality(self, e1: ExpressionId, e2: ExpressionId) -> bool {
+        self.equals(e1, e2)
+    }
 }
 
 pub fn equals(
     (expressions1, e1): (&ExpressionArena, ExpressionId),
     (expressions2, e2): (&ExpressionArena, ExpressionId),
 ) -> bool {
-    Equality {
-        expressions1,
-        expressions2: expressions2,
-    }
-    .equals(e1, e2)
+    Equality::new(expressions1, expressions2).check_equality(e1, e2)
 }
 
 #[cfg(test)]

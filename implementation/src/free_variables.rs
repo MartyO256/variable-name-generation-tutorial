@@ -26,27 +26,27 @@ impl<'a> FreeVariables<'a> {
 
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
-            &Expression::Variable { identifier } => {
-                if let Option::None = self.environment.lookup(identifier) {
-                    self.free_variables.insert(identifier);
+            Expression::Variable { identifier } => {
+                if self.environment.lookup(*identifier).is_none() {
+                    self.free_variables.insert(*identifier);
                 }
             }
-            &Expression::NamelessVariable { index: _ } => {}
-            &Expression::Abstraction { parameter, body } => {
-                self.environment.bind_option(parameter);
-                self.visit(body);
-                self.environment.unbind_option(parameter);
+            Expression::NamelessVariable { index: _ } => {}
+            Expression::Abstraction { parameter, body } => {
+                self.environment.bind_option(*parameter);
+                self.visit(*body);
+                self.environment.unbind_option(*parameter);
             }
-            &Expression::NamelessAbstraction { body } => {
+            Expression::NamelessAbstraction { body } => {
                 self.environment.shift();
-                self.visit(body);
+                self.visit(*body);
                 self.environment.unshift();
             }
-            &Expression::Application {
+            Expression::Application {
                 function,
-                ref arguments,
+                arguments,
             } => {
-                self.visit(function);
+                self.visit(*function);
                 for &argument in arguments.iter() {
                     self.visit(argument);
                 }

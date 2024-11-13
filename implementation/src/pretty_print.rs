@@ -27,9 +27,9 @@ fn expression1<'a>(
     expression: ExpressionId,
 ) -> Result<RcDoc<'a>, FromUtf8Error> {
     match &pool[expression] {
-        &Expression::Abstraction { parameter, body } => {
-            let parameter_doc = name_option(strings, parameter)?;
-            let body_doc = expression1(strings, pool, body)?;
+        Expression::Abstraction { parameter, body } => {
+            let parameter_doc = name_option(strings, *parameter)?;
+            let body_doc = expression1(strings, pool, *body)?;
             Result::Ok(
                 RcDoc::text("λ")
                     .append(parameter_doc)
@@ -38,8 +38,8 @@ fn expression1<'a>(
                     .group(),
             )
         }
-        &Expression::NamelessAbstraction { body } => {
-            let body_doc = expression1(strings, pool, body)?;
+        Expression::NamelessAbstraction { body } => {
+            let body_doc = expression1(strings, pool, *body)?;
             Result::Ok(
                 RcDoc::text("λ.")
                     .append(RcDoc::line().append(body_doc).nest(2))
@@ -56,11 +56,11 @@ fn expression2<'a>(
     expression: ExpressionId,
 ) -> Result<RcDoc<'a>, FromUtf8Error> {
     match &pool[expression] {
-        &Expression::Application {
+        Expression::Application {
             function,
-            ref arguments,
+            arguments,
         } => {
-            let function_doc = expression3(strings, pool, function)?;
+            let function_doc = expression3(strings, pool, *function)?;
             let mut argument_docs = Vec::with_capacity(arguments.len());
             for &argument in arguments.iter() {
                 let argument_doc = expression3(strings, pool, argument)?;
@@ -86,8 +86,8 @@ fn expression3<'a>(
     expression: ExpressionId,
 ) -> Result<RcDoc<'a>, FromUtf8Error> {
     match &pool[expression] {
-        &Expression::Variable { identifier } => name(strings, identifier),
-        &Expression::NamelessVariable { index } => Result::Ok(RcDoc::as_string(index.into_usize())),
+        Expression::Variable { identifier } => name(strings, *identifier),
+        Expression::NamelessVariable { index } => Result::Ok(RcDoc::as_string(index.into_usize())),
         _ => {
             let expression_doc = expression1(strings, pool, expression)?;
             Result::Ok(
@@ -149,7 +149,7 @@ pub fn to_string(
     e: ExpressionId,
 ) -> Result<String, PrettyPrintError> {
     let mut buffer = Vec::default();
-    let document = expression(&strings, &expressions, e)?;
+    let document = expression(strings, expressions, e)?;
     document.render(width, &mut buffer)?;
     let rendered = String::from_utf8(buffer)?;
     Result::Ok(rendered)

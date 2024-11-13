@@ -112,6 +112,11 @@ impl ExpressionArena {
     }
 
     #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    #[inline]
     pub fn variable(&mut self, identifier: StringId) -> ExpressionId {
         self.add(Expression::Variable { identifier })
     }
@@ -142,6 +147,12 @@ impl ExpressionArena {
             function,
             arguments,
         })
+    }
+}
+
+impl Default for ExpressionArena {
+    fn default() -> ExpressionArena {
+        ExpressionArena::new()
     }
 }
 

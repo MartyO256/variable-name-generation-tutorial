@@ -54,8 +54,7 @@ impl ReferencingEnvironment {
         if let Option::Some(stack) = self.bindings_map.get_mut(&identifier) {
             stack.push(self.size);
         } else {
-            let mut stack = Vec::new();
-            stack.push(self.size);
+            let stack = vec![self.size];
             self.bindings_map.insert(identifier, stack);
         }
         self.shift();
@@ -106,5 +105,11 @@ impl ReferencingEnvironment {
     pub fn lookup_index(&self, identifier: StringId) -> Option<DeBruijnIndex> {
         self.lookup(identifier)
             .map(|level| (self.size - level).into())
+    }
+}
+
+impl Default for ReferencingEnvironment {
+    fn default() -> ReferencingEnvironment {
+        ReferencingEnvironment::new()
     }
 }

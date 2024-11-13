@@ -29,13 +29,10 @@ impl<'a> AlphaEquivalence<'a> {
 
     fn alpha_equivalent(&mut self, e1: ExpressionId, e2: ExpressionId) -> bool {
         match (&self.expressions1[e1], &self.expressions2[e2]) {
-            (
-                &Expression::Variable { identifier: i1 },
-                &Expression::Variable { identifier: i2 },
-            ) => {
+            (Expression::Variable { identifier: i1 }, Expression::Variable { identifier: i2 }) => {
                 match (
-                    self.environment1.lookup_index(i1),
-                    self.environment2.lookup_index(i2),
+                    self.environment1.lookup_index(*i1),
+                    self.environment2.lookup_index(*i2),
                 ) {
                     (Option::Some(i1), Option::Some(i2)) => i1 == i2,
                     (Option::None, Option::None) => i1 == i2,
@@ -43,92 +40,90 @@ impl<'a> AlphaEquivalence<'a> {
                 }
             }
             (
-                &Expression::Variable { identifier: i1 },
-                &Expression::NamelessVariable { index: i2 },
-            ) => match self.environment1.lookup_index(i1) {
-                Option::Some(l1) => l1 == i2,
+                Expression::Variable { identifier: i1 },
+                Expression::NamelessVariable { index: i2 },
+            ) => match self.environment1.lookup_index(*i1) {
+                Option::Some(l1) => l1 == *i2,
                 Option::None => false,
             },
             (
-                &Expression::NamelessVariable { index: i1 },
-                &Expression::Variable { identifier: i2 },
-            ) => match self.environment2.lookup_index(i2) {
-                Option::Some(l2) => i1 == l2,
+                Expression::NamelessVariable { index: i1 },
+                Expression::Variable { identifier: i2 },
+            ) => match self.environment2.lookup_index(*i2) {
+                Option::Some(l2) => *i1 == l2,
                 Option::None => false,
             },
             (
-                &Expression::NamelessVariable { index: i1 },
-                &Expression::NamelessVariable { index: i2 },
+                Expression::NamelessVariable { index: i1 },
+                Expression::NamelessVariable { index: i2 },
             ) => i1 == i2,
             (
-                &Expression::Abstraction {
+                Expression::Abstraction {
                     parameter: param1,
                     body: b1,
                 },
-                &Expression::Abstraction {
+                Expression::Abstraction {
                     parameter: param2,
                     body: b2,
                 },
             ) => {
-                self.environment1.bind_option(param1);
-                self.environment2.bind_option(param2);
-                let r = self.alpha_equivalent(b1, b2);
-                self.environment2.unbind_option(param2);
-                self.environment1.unbind_option(param1);
+                self.environment1.bind_option(*param1);
+                self.environment2.bind_option(*param2);
+                let r = self.alpha_equivalent(*b1, *b2);
+                self.environment2.unbind_option(*param2);
+                self.environment1.unbind_option(*param1);
                 r
             }
             (
-                &Expression::Abstraction {
+                Expression::Abstraction {
                     parameter: param1,
                     body: b1,
                 },
-                &Expression::NamelessAbstraction { body: b2 },
+                Expression::NamelessAbstraction { body: b2 },
             ) => {
-                self.environment1.bind_option(param1);
+                self.environment1.bind_option(*param1);
                 self.environment2.shift();
-                let r = self.alpha_equivalent(b1, b2);
+                let r = self.alpha_equivalent(*b1, *b2);
                 self.environment2.unshift();
-                self.environment1.unbind_option(param1);
+                self.environment1.unbind_option(*param1);
                 r
             }
             (
-                &Expression::NamelessAbstraction { body: b1 },
-                &Expression::Abstraction {
+                Expression::NamelessAbstraction { body: b1 },
+                Expression::Abstraction {
                     parameter: param2,
                     body: b2,
                 },
             ) => {
                 self.environment1.shift();
-                self.environment2.bind_option(param2);
-                let r = self.alpha_equivalent(b1, b2);
-                self.environment2.unbind_option(param2);
+                self.environment2.bind_option(*param2);
+                let r = self.alpha_equivalent(*b1, *b2);
+                self.environment2.unbind_option(*param2);
                 self.environment1.unshift();
                 r
             }
             (
-                &Expression::NamelessAbstraction { body: b1 },
-                &Expression::NamelessAbstraction { body: b2 },
+                Expression::NamelessAbstraction { body: b1 },
+                Expression::NamelessAbstraction { body: b2 },
             ) => {
                 self.environment1.shift();
                 self.environment2.shift();
-                let r = self.alpha_equivalent(b1, b2);
+                let r = self.alpha_equivalent(*b1, *b2);
                 self.environment2.unshift();
                 self.environment1.unshift();
                 r
             }
             (
-                &Expression::Application {
+                Expression::Application {
                     function: f1,
-                    arguments: ref as1,
+                    arguments: as1,
                 },
-                &Expression::Application {
+                Expression::Application {
                     function: f2,
-                    arguments: ref as2,
+                    arguments: as2,
                 },
             ) => {
-                if as1.len() != as2.len() {
-                    false
-                } else if !self.alpha_equivalent(f1, f2) {
+                if as1.len() != as2.len() || !self.alpha_equivalent(*f1, *f2) {
                     false
                 } else {
                     for (&a1, &a2) in as1.iter().zip(as2.iter()) {

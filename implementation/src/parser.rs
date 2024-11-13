@@ -167,9 +167,7 @@ fn mixed_expression2(input: &[u8]) -> IResult<&[u8], Expression> {
 
 fn mixed_expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     fn nameless_variable_expression(input: &[u8]) -> IResult<&[u8], Expression> {
-        map(u32, |n| Expression::NamelessVariable {
-            index: (n as usize).into(),
-        })(input)
+        map(u32, |n| Expression::NamelessVariable { index: n as usize })(input)
     }
 
     fn variable_expression(input: &[u8]) -> IResult<&[u8], Expression> {
@@ -204,14 +202,12 @@ fn lower(
 ) -> ExpressionId {
     match expression {
         Expression::Variable { identifier } => {
-            let lowered_identifier = strings.intern(&identifier);
+            let lowered_identifier = strings.intern(identifier);
             expressions.variable(lowered_identifier)
         }
-        Expression::NamelessVariable { index } => {
-            expressions.nameless_variable(index.clone().into())
-        }
+        Expression::NamelessVariable { index } => expressions.nameless_variable((*index).into()),
         Expression::Abstraction { parameter, body } => {
-            let lowered_parameter = parameter.as_ref().map(|n| strings.intern(&n));
+            let lowered_parameter = parameter.as_ref().map(|n| strings.intern(n));
             let lowered_body = lower(strings, expressions, body);
             expressions.abstraction(lowered_parameter, lowered_body)
         }

@@ -59,6 +59,11 @@ impl StringArena {
         self.strings.len()
     }
 
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn intern(&mut self, value: &[u8]) -> StringId {
         match self.ids.entry(Rc::new(value.to_vec().into_boxed_slice())) {
             Entry::Occupied(entry) => *entry.get(),
@@ -74,6 +79,12 @@ impl StringArena {
 
     pub fn intern_str(&mut self, value: &str) -> StringId {
         self.intern(value.as_bytes())
+    }
+}
+
+impl Default for StringArena {
+    fn default() -> StringArena {
+        StringArena::new()
     }
 }
 

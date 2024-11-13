@@ -24,37 +24,35 @@ impl<'a> Indexing<'a> {
         }
     }
 
-    fn to_locally_nameless(&mut self, expression: ExpressionId) -> ExpressionId {
+    fn convert_to_locally_nameless(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.arena[expression] {
-            &Expression::Variable { identifier } => {
-                match self.environment.lookup_index(identifier) {
-                    Option::Some(index) => self.destination.nameless_variable(index.into()),
-                    Option::None => self.destination.variable(identifier),
+            Expression::Variable { identifier } => {
+                match self.environment.lookup_index(*identifier) {
+                    Option::Some(index) => self.destination.nameless_variable(index),
+                    Option::None => self.destination.variable(*identifier),
                 }
             }
-            &Expression::NamelessVariable { ref index } => {
-                self.destination.nameless_variable(*index)
-            }
-            &Expression::Abstraction { parameter, body } => {
-                self.environment.bind_option(parameter);
-                let indexed_body = self.to_locally_nameless(body);
-                self.environment.unbind_option(parameter);
+            Expression::NamelessVariable { index } => self.destination.nameless_variable(*index),
+            Expression::Abstraction { parameter, body } => {
+                self.environment.bind_option(*parameter);
+                let indexed_body = self.convert_to_locally_nameless(*body);
+                self.environment.unbind_option(*parameter);
                 self.destination.nameless_abstraction(indexed_body)
             }
-            &Expression::NamelessAbstraction { ref body } => {
+            Expression::NamelessAbstraction { body } => {
                 self.environment.shift();
-                let indexed_body = self.to_locally_nameless(*body);
+                let indexed_body = self.convert_to_locally_nameless(*body);
                 self.environment.unshift();
                 self.destination.nameless_abstraction(indexed_body)
             }
-            &Expression::Application {
+            Expression::Application {
                 function,
-                ref arguments,
+                arguments,
             } => {
-                let indexed_function = self.to_locally_nameless(function);
+                let indexed_function = self.convert_to_locally_nameless(*function);
                 let mut indexed_arguments = Vec::with_capacity(arguments.len());
                 for &argument in arguments.iter() {
-                    let indexed_argument = self.to_locally_nameless(argument);
+                    let indexed_argument = self.convert_to_locally_nameless(argument);
                     indexed_arguments.push(indexed_argument)
                 }
                 self.destination
@@ -64,7 +62,7 @@ impl<'a> Indexing<'a> {
     }
 
     pub fn convert(mut self, expression: ExpressionId) -> ExpressionId {
-        self.to_locally_nameless(expression)
+        self.convert_to_locally_nameless(expression)
     }
 }
 
@@ -78,18 +76,18 @@ pub fn to_locally_nameless(
 
 pub fn is_locally_nameless(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
     match &expressions[expression] {
-        &Expression::Variable { identifier: _ } => true,
-        &Expression::NamelessVariable { index: _ } => true,
-        &Expression::Abstraction {
+        Expression::Variable { identifier: _ } => true,
+        Expression::NamelessVariable { index: _ } => true,
+        Expression::Abstraction {
             parameter: _,
             body: _,
         } => false,
-        &Expression::NamelessAbstraction { body } => is_locally_nameless(expressions, body),
-        &Expression::Application {
+        Expression::NamelessAbstraction { body } => is_locally_nameless(expressions, *body),
+        Expression::Application {
             function,
-            ref arguments,
+            arguments,
         } => {
-            if !is_locally_nameless(expressions, function) {
+            if !is_locally_nameless(expressions, *function) {
                 false
             } else {
                 for &argument in arguments.iter() {
