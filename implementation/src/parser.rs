@@ -6,7 +6,7 @@ use nom::{
     character::complete::{alpha1, alphanumeric0, multispace0, multispace1, u32},
     combinator::{eof, map, opt, recognize},
     multi::separated_list1,
-    sequence::{delimited, pair, preceded},
+    sequence::{delimited, pair, preceded, terminated},
     Finish, IResult,
 };
 
@@ -59,15 +59,35 @@ fn name(input: &[u8]) -> IResult<&[u8], &[u8]> {
     recognize(pair(alpha1, alphanumeric0))(input)
 }
 
+/// <expression> ::=
+///   | <expression1>
+///
+/// <expression1> ::=
+///   | `λ` <name> `.` <expression1>
+///   | `λ` `_` `.` <expression1>
+///   | <expression2>
+///
+/// <expression2> ::=
+///   | <expression3>+
+///
+/// <expression3> ::=
+///   | <name>
+///   | `(` <expression1> `)`
+fn expression(input: &[u8]) -> IResult<&[u8], Expression> {
+    expression1(input)
+}
+
 fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
     fn lambda_expression(input: &[u8]) -> IResult<&[u8], Expression> {
-        let (input, _) = lambda(input)?;
-        let (input, parameter) = alt((
-            map(underscore, |_| Option::None),
-            map(name, |n| Option::Some(n.to_vec().into_boxed_slice())),
-        ))(input)?;
-        let (input, _) = dot(input)?;
-        let (input, _) = multispace0(input)?;
+        let (input, _) = terminated(lambda, multispace0)(input)?;
+        let (input, parameter) = terminated(
+            alt((
+                map(underscore, |_| Option::None),
+                map(name, |n| Option::Some(n.to_vec().into_boxed_slice())),
+            )),
+            multispace0,
+        )(input)?;
+        let (input, _) = terminated(dot, multispace0)(input)?;
         let (input, body) = expression1(input)?;
         IResult::Ok((
             input,
@@ -115,19 +135,37 @@ fn expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     alt((variable_expression, parenthesized_expression))(input)
 }
 
-fn expression(input: &[u8]) -> IResult<&[u8], Expression> {
-    expression1(input)
+/// <mixed-expression> ::=
+///   | <mixed-expression1>
+///
+/// <mixed-expresion1> ::=
+///   | `λ` <name> `.` <mixed-expression1>
+///   | `λ` `_` `.` <mixed-expression1>
+///   | `λ` `.` <mixed-expression1>
+///   | <mixed-expression2>
+///
+/// <mixed-expression2> ::=
+///   | <mixed-expression3>+
+///
+/// <mixed-expression3> ::=
+///   | <name>
+///   | <number>
+///   | `(` <mixed-expression1> `)`
+fn mixed_expression(input: &[u8]) -> IResult<&[u8], Expression> {
+    mixed_expression1(input)
 }
 
 fn mixed_expression1(input: &[u8]) -> IResult<&[u8], Expression> {
     fn lambda_expression(input: &[u8]) -> IResult<&[u8], Expression> {
-        let (input, _) = lambda(input)?;
-        let (input, parameter) = opt(alt((
-            map(underscore, |_| Option::None),
-            map(name, |n| Option::Some(n.to_vec().into_boxed_slice())),
-        )))(input)?;
-        let (input, _) = dot(input)?;
-        let (input, _) = multispace0(input)?;
+        let (input, _) = terminated(lambda, multispace0)(input)?;
+        let (input, parameter) = opt(terminated(
+            alt((
+                map(underscore, |_| Option::None),
+                map(name, |n| Option::Some(n.to_vec().into_boxed_slice())),
+            )),
+            multispace0,
+        ))(input)?;
+        let (input, _) = terminated(dot, multispace0)(input)?;
         let (input, body) = mixed_expression1(input)?;
         match parameter {
             Option::Some(parameter) => IResult::Ok((
@@ -191,10 +229,6 @@ fn mixed_expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     ))(input)
 }
 
-fn mixed_expression(input: &[u8]) -> IResult<&[u8], Expression> {
-    mixed_expression1(input)
-}
-
 fn lower(
     strings: &mut StringArena,
     expressions: &mut ExpressionArena,
@@ -235,7 +269,7 @@ pub fn parse_expression<'a>(
     expressions: &mut ExpressionArena,
     input: &'a [u8],
 ) -> Result<ExpressionId, nom::error::Error<&'a [u8]>> {
-    match delimited(multispace0, expression, preceded(multispace0, eof))(input).finish() {
+    match terminated(delimited(multispace0, expression, multispace0), eof)(input).finish() {
         Result::Ok((_input, parsed)) => {
             let lowered = lower(strings, expressions, &parsed);
             Result::Ok(lowered)
@@ -249,7 +283,7 @@ pub fn parse_mixed_expression<'a>(
     expressions: &mut ExpressionArena,
     input: &'a [u8],
 ) -> Result<ExpressionId, nom::error::Error<&'a [u8]>> {
-    match delimited(multispace0, mixed_expression, preceded(multispace0, eof))(input).finish() {
+    match terminated(delimited(multispace0, mixed_expression, multispace0), eof)(input).finish() {
         Result::Ok((_input, parsed)) => {
             let lowered = lower(strings, expressions, &parsed);
             Result::Ok(lowered)
