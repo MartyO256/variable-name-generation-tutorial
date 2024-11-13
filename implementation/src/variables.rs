@@ -3,8 +3,59 @@ use std::{collections::HashSet, rc::Rc};
 use crate::{
     expression::{Expression, ExpressionArena, ExpressionId},
     referencing_environment::ReferencingEnvironment,
-    strings::StringId,
+    strings::{StringArena, StringId},
 };
+
+pub fn is_named(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
+    match &expressions[expression] {
+        Expression::Variable { identifier: _ } => true,
+        Expression::NamelessVariable { index: _ } => false,
+        Expression::Abstraction { parameter: _, body } => is_named(expressions, *body),
+        Expression::NamelessAbstraction { body: _ } => false,
+        Expression::Application {
+            function,
+            arguments,
+        } => {
+            if !is_named(expressions, *function) {
+                false
+            } else {
+                for &argument in arguments.iter() {
+                    if !is_named(expressions, argument) {
+                        return false;
+                    }
+                }
+                true
+            }
+        }
+    }
+}
+
+pub fn is_locally_nameless(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
+    match &expressions[expression] {
+        Expression::Variable { identifier: _ } => true,
+        Expression::NamelessVariable { index: _ } => true,
+        Expression::Abstraction {
+            parameter: _,
+            body: _,
+        } => false,
+        Expression::NamelessAbstraction { body } => is_locally_nameless(expressions, *body),
+        Expression::Application {
+            function,
+            arguments,
+        } => {
+            if !is_locally_nameless(expressions, *function) {
+                false
+            } else {
+                for &argument in arguments.iter() {
+                    if !is_locally_nameless(expressions, argument) {
+                        return false;
+                    }
+                }
+                true
+            }
+        }
+    }
+}
 
 struct FreeVariables<'a> {
     environment: &'a mut ReferencingEnvironment,
@@ -69,6 +120,38 @@ pub fn free_variables(
     FreeVariables::new(&mut framed_environment, expressions).free_variables(expression)
 }
 
+pub trait FreshVariableNameGenerator {
+    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
+}
+
+pub struct SuffixVariableNameGenerator {}
+
+impl SuffixVariableNameGenerator {
+    pub fn new() -> SuffixVariableNameGenerator {
+        SuffixVariableNameGenerator {}
+    }
+}
+
+impl Default for SuffixVariableNameGenerator {
+    fn default() -> SuffixVariableNameGenerator {
+        SuffixVariableNameGenerator::new()
+    }
+}
+
+impl FreshVariableNameGenerator for SuffixVariableNameGenerator {
+    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId {
+        let mut suffix = 0;
+        let mut n = strings.intern("x".as_bytes());
+        while claimed.contains(&n) {
+            suffix += 1;
+            let mut t = "x".as_bytes().to_vec();
+            t.extend(suffix.to_string().as_bytes());
+            n = strings.intern(&t);
+        }
+        n
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -98,7 +181,7 @@ mod tests {
     }
 
     #[test]
-    fn converts_to_locally_nameless_representation() {
+    fn free_variables_computes_the_free_variables_in_the_expression() {
         check_free_variables("x", vec!["x"]);
         check_free_variables("λf. x", vec!["x"]);
         check_free_variables("λf. λx. f x", vec![]);

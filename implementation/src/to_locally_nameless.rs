@@ -74,43 +74,16 @@ pub fn to_locally_nameless(
     Indexing::new(&mut framed_environment, arena, destination).convert(expression)
 }
 
-pub fn is_locally_nameless(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
-    match &expressions[expression] {
-        Expression::Variable { identifier: _ } => true,
-        Expression::NamelessVariable { index: _ } => true,
-        Expression::Abstraction {
-            parameter: _,
-            body: _,
-        } => false,
-        Expression::NamelessAbstraction { body } => is_locally_nameless(expressions, *body),
-        Expression::Application {
-            function,
-            arguments,
-        } => {
-            if !is_locally_nameless(expressions, *function) {
-                false
-            } else {
-                for &argument in arguments.iter() {
-                    if !is_locally_nameless(expressions, argument) {
-                        return false;
-                    }
-                }
-                true
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
     use crate::{
         equality::equals,
-        free_variables::free_variables,
         parser::{parse_expression, parse_mixed_expression},
         referencing_environment::ReferencingEnvironment,
         strings::StringArena,
         to_locally_nameless::to_locally_nameless,
+        variables::{free_variables, is_locally_nameless},
     };
 
     use super::*;

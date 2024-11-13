@@ -1,5 +1,4 @@
 use std::{
-    cell::RefCell,
     collections::{HashMap, HashSet},
     rc::Rc,
 };
@@ -10,212 +9,185 @@ use crate::{
     variables::FreshVariableNameGenerator,
 };
 
-#[derive(Clone)]
-struct ReferenceSet {
-    variables: HashSet<StringId>,
-    indices: HashMap<DeBruijnIndex, Rc<RefCell<Option<StringId>>>>,
+pub struct ReferencingEnvironment {
+    parent: Option<Rc<ReferencingEnvironment>>,
+    bindings_map: HashMap<StringId, Vec<()>>,
+    bindings_list: Vec<Option<StringId>>,
+    size: usize,
 }
 
-struct BindingStack {
-    stack: Vec<Rc<RefCell<Option<StringId>>>>,
-}
-
-struct Store {
-    reference_sets: Vec<Option<ReferenceSet>>,
-}
-
-impl ReferenceSet {
-    pub fn variable(identifier: StringId) -> ReferenceSet {
-        let mut variables = HashSet::new();
-        variables.insert(identifier);
-        ReferenceSet {
-            variables,
-            indices: HashMap::new(),
+impl ReferencingEnvironment {
+    #[inline]
+    pub fn new() -> ReferencingEnvironment {
+        ReferencingEnvironment {
+            parent: Option::None,
+            bindings_map: HashMap::new(),
+            bindings_list: Vec::new(),
+            size: 0,
         }
     }
 
-    pub fn index(index: DeBruijnIndex, cell: Rc<RefCell<Option<StringId>>>) -> ReferenceSet {
-        let mut indices = HashMap::new();
-        indices.insert(index, cell);
-        ReferenceSet {
-            variables: HashSet::new(),
-            indices,
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> ReferencingEnvironment {
+        ReferencingEnvironment {
+            parent: Option::None,
+            bindings_map: HashMap::with_capacity(capacity),
+            bindings_list: Vec::with_capacity(capacity),
+            size: 0,
         }
     }
 
-    pub fn union(sets: Vec<&ReferenceSet>) -> ReferenceSet {
-        let mut variables = HashSet::new();
-        for &set in sets.iter() {
-            for &variable in set.variables.iter() {
-                variables.insert(variable);
-            }
+    #[inline]
+    pub fn new_frame(refs: Rc<ReferencingEnvironment>) -> ReferencingEnvironment {
+        let size = refs.size;
+        ReferencingEnvironment {
+            parent: Option::Some(refs),
+            bindings_map: HashMap::new(),
+            bindings_list: Vec::new(),
+            size,
         }
-        let mut indices = HashMap::new();
-        for &set in sets.iter() {
-            for (&index, name) in set.indices.iter() {
-                indices.insert(index, name.clone());
-            }
+    }
+
+    #[inline]
+    pub fn new_frame_with_capacity(
+        refs: Rc<ReferencingEnvironment>,
+        capacity: usize,
+    ) -> ReferencingEnvironment {
+        let size = refs.size;
+        ReferencingEnvironment {
+            parent: Option::Some(refs),
+            bindings_map: HashMap::with_capacity(capacity),
+            bindings_list: Vec::with_capacity(capacity),
+            size,
         }
-        ReferenceSet { variables, indices }
     }
 
-    fn unshifted_indices(&self) -> HashMap<DeBruijnIndex, Rc<RefCell<Option<StringId>>>> {
-        let mut indices = HashMap::new();
-        for (&index, name) in self.indices.iter() {
-            let i = index.into_usize();
-            if i > 1 {
-                indices.insert((i - 1).into(), name.clone());
-            }
+    pub fn bind(&mut self, identifier: StringId) {
+        if let Option::Some(stack) = self.bindings_map.get_mut(&identifier) {
+            stack.push(());
+        } else {
+            let stack = vec![()];
+            self.bindings_map.insert(identifier, stack);
         }
-        indices
+        self.bindings_list.push(Option::Some(identifier));
+        self.size += 1;
     }
 
-    pub fn unshift(&self) -> ReferenceSet {
-        let variables = self.variables.clone();
-        let indices = self.unshifted_indices();
-        ReferenceSet { variables, indices }
+    pub fn unbind(&mut self, identifier: StringId) {
+        debug_assert!(self.bindings_map.contains_key(&identifier));
+        let stack = self.bindings_map.get_mut(&identifier).unwrap();
+        debug_assert!(!stack.is_empty());
+        stack.pop();
+        self.bindings_list.pop();
+        self.size -= 1;
     }
 
-    pub fn unbind(&self, identifier: StringId) -> ReferenceSet {
-        let mut variables = self.variables.clone();
-        variables.remove(&identifier);
-        let indices = self.unshifted_indices();
-        ReferenceSet { variables, indices }
+    #[inline]
+    pub fn shift(&mut self) {
+        self.size += 1;
+        self.bindings_list.push(Option::None);
     }
 
-    pub fn unbind_option(&self, identifier: Option<StringId>) -> ReferenceSet {
+    #[inline]
+    pub fn unshift(&mut self) {
+        debug_assert!(self.size > 0);
+        self.size -= 1;
+        self.bindings_list.pop();
+    }
+
+    #[inline]
+    pub fn bind_option(&mut self, identifier: Option<StringId>) {
+        match identifier {
+            Option::Some(identifier) => self.bind(identifier),
+            Option::None => self.shift(),
+        }
+    }
+
+    #[inline]
+    pub fn unbind_option(&mut self, identifier: Option<StringId>) {
         match identifier {
             Option::Some(identifier) => self.unbind(identifier),
             Option::None => self.unshift(),
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.variables.len() + self.indices.len()
-    }
-
-    pub fn names(&self) -> HashSet<StringId> {
-        let mut names = HashSet::with_capacity(self.len());
-        for &name in self.variables.iter() {
-            names.insert(name);
-        }
-        for index in self.indices.values() {
-            if let Option::Some(name) = *index.borrow() {
-                names.insert(name);
-            }
-        }
-        names
-    }
-
     pub fn lookup_name(&self, index: DeBruijnIndex) -> Option<StringId> {
-        self.indices.get(&index).and_then(|cell| *cell.borrow())
-    }
-
-    pub fn select_name(&self, index: DeBruijnIndex, name: StringId) {
-        debug_assert!(self.contains_index(index));
-        *self.indices.get(&index).unwrap().borrow_mut() = Option::Some(name);
-    }
-
-    pub fn contains_index(&self, index: DeBruijnIndex) -> bool {
-        self.indices.contains_key(&index)
-    }
-}
-
-impl BindingStack {
-    pub fn new() -> BindingStack {
-        BindingStack { stack: Vec::new() }
-    }
-
-    #[allow(dead_code)]
-    pub fn with_capacity(capacity: usize) -> BindingStack {
-        BindingStack {
-            stack: Vec::with_capacity(capacity),
+        let i: usize = index.into_usize();
+        let n = self.bindings_list.len();
+        if i <= n {
+            self.bindings_list[n - i]
+        } else if let Option::Some(parent) = self.parent.to_owned() {
+            parent.lookup_name((i - n).into())
+        } else {
+            unreachable!()
         }
     }
+}
 
-    pub fn len(&self) -> usize {
-        self.stack.len()
-    }
-
-    pub fn push(&mut self) {
-        self.stack.push(Rc::new(RefCell::new(Option::None)))
-    }
-
-    pub fn pop(&mut self) {
-        debug_assert!(self.len() > 0);
-        self.stack.pop().unwrap();
-    }
-
-    pub fn lookup(&self, index: DeBruijnIndex) -> &Rc<RefCell<Option<StringId>>> {
-        debug_assert!(index.into_usize() <= self.len());
-        &self.stack[self.len() - index.into_usize()]
+impl Default for ReferencingEnvironment {
+    fn default() -> ReferencingEnvironment {
+        ReferencingEnvironment::new()
     }
 }
 
-impl Store {
-    pub fn new(n: usize) -> Store {
-        Store {
-            reference_sets: vec![Option::None; n],
-        }
-    }
-
-    pub fn has(&self, expression: ExpressionId) -> bool {
-        expression.into_usize() < self.reference_sets.len()
-    }
-
-    pub fn set(&mut self, expression: ExpressionId, reference_set: ReferenceSet) {
-        debug_assert!(self.has(expression));
-        self.reference_sets[expression.into_usize()] = Option::Some(reference_set)
-    }
-
-    pub fn get(&self, expression: ExpressionId) -> &ReferenceSet {
-        debug_assert!(self.has(expression));
-        self.reference_sets[expression.into_usize()]
-            .as_ref()
-            .unwrap()
-    }
-}
-
-struct StoreBuilder<'a> {
+struct UsedVariables<'a> {
+    environment: &'a mut ReferencingEnvironment,
     expressions: &'a ExpressionArena,
-    bindings: BindingStack,
-    store: Store,
+    used_variables: HashSet<StringId>,
+    used_indices: HashSet<DeBruijnIndex>,
 }
 
-impl<'a> StoreBuilder<'a> {
-    pub fn new(expressions: &'a ExpressionArena) -> StoreBuilder<'a> {
-        StoreBuilder {
+impl<'a> UsedVariables<'a> {
+    pub fn new(
+        environment: &'a mut ReferencingEnvironment,
+        expressions: &'a ExpressionArena,
+    ) -> UsedVariables<'a> {
+        UsedVariables {
+            environment,
             expressions,
-            bindings: BindingStack::new(),
-            store: Store::new(expressions.len()),
+            used_variables: HashSet::new(),
+            used_indices: HashSet::new(),
         }
+    }
+
+    fn unshift_indices(&mut self) {
+        self.used_indices = self
+            .used_indices
+            .drain()
+            .filter_map(|index| {
+                let i = index.into_usize();
+                if i > 0 {
+                    Option::Some((i - 1).into())
+                } else {
+                    Option::None
+                }
+            })
+            .collect();
     }
 
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable { identifier } => {
-                self.store
-                    .set(expression, ReferenceSet::variable(*identifier));
+                self.used_variables.insert(*identifier);
             }
             Expression::NamelessVariable { index } => {
-                let cell = self.bindings.lookup(*index);
-                self.store
-                    .set(expression, ReferenceSet::index(*index, cell.clone()));
+                if let Option::Some(name) = self.environment.lookup_name(*index) {
+                    self.used_variables.insert(name);
+                } else {
+                    self.used_indices.insert(*index);
+                }
             }
             Expression::Abstraction { parameter, body } => {
-                self.bindings.push();
+                self.environment.bind_option(*parameter);
                 self.visit(*body);
-                self.bindings.pop();
-                let body_reference_set = self.store.get(*body);
-                self.store
-                    .set(expression, body_reference_set.unbind_option(*parameter));
+                self.environment.unbind_option(*parameter);
+                self.unshift_indices();
             }
             Expression::NamelessAbstraction { body } => {
-                self.bindings.push();
+                self.environment.shift();
                 self.visit(*body);
-                self.bindings.pop();
-                let body_reference_set = self.store.get(*body);
-                self.store.set(expression, body_reference_set.unshift());
+                self.environment.unshift();
+                self.unshift_indices();
             }
             Expression::Application {
                 function,
@@ -225,22 +197,16 @@ impl<'a> StoreBuilder<'a> {
                 for &argument in arguments.iter() {
                     self.visit(argument);
                 }
-                let mut reference_sets = Vec::new();
-                let function_reference_set = self.store.get(*function);
-                reference_sets.push(function_reference_set);
-                for &argument in arguments.iter() {
-                    let argument_reference_set = self.store.get(argument);
-                    reference_sets.push(argument_reference_set);
-                }
-                let reference_set = ReferenceSet::union(reference_sets);
-                self.store.set(expression, reference_set);
             }
         }
     }
 
-    pub fn build_store(mut self, expression: ExpressionId) -> Store {
+    pub fn used_variables_and_indices(
+        mut self,
+        expression: ExpressionId,
+    ) -> (HashSet<StringId>, HashSet<DeBruijnIndex>) {
         self.visit(expression);
-        self.store
+        (self.used_variables, self.used_indices)
     }
 }
 
@@ -248,7 +214,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     strings: &'a mut StringArena,
     provider: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
-    store: Store,
+    environment: ReferencingEnvironment,
     variable_name_generator: G,
 }
 
@@ -257,14 +223,13 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         strings: &'a mut StringArena,
         provider: &'a ExpressionArena,
         destination: &'a mut ExpressionArena,
-        store: Store,
         variable_name_generator: G,
     ) -> NameGeneration<'a, G> {
         NameGeneration {
             strings,
             provider,
             destination,
-            store,
+            environment: ReferencingEnvironment::new(),
             variable_name_generator,
         }
     }
@@ -273,27 +238,33 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         match &self.provider[expression] {
             Expression::Variable { identifier } => self.destination.variable(*identifier),
             Expression::NamelessVariable { index } => {
-                let reference_set = self.store.get(expression);
-                let identifier = reference_set.lookup_name(*index).unwrap();
+                let identifier = self.environment.lookup_name(*index).unwrap();
                 self.destination.variable(identifier)
             }
             Expression::Abstraction { parameter, body } => {
+                self.environment.bind_option(*parameter);
                 let named_body = self.convert_to_named(*body);
+                self.environment.unbind_option(*parameter);
                 self.destination.abstraction(*parameter, named_body)
             }
             Expression::NamelessAbstraction { body } => {
-                let reference_set = self.store.get(*body);
-                let parameter = if reference_set.contains_index(1.into()) {
-                    let identifiers = reference_set.names();
+                self.environment.shift();
+                let (used_variables, used_indices) =
+                    UsedVariables::new(&mut self.environment, self.provider)
+                        .used_variables_and_indices(*body);
+                self.environment.unshift();
+                let parameter = if used_indices.contains(&1.into()) {
+                    let identifiers = used_variables;
                     let identifier = self
                         .variable_name_generator
                         .fresh_name(self.strings, &identifiers);
-                    reference_set.select_name(1.into(), identifier);
                     Option::Some(identifier)
                 } else {
                     Option::None
                 };
+                self.environment.bind_option(parameter);
                 let named_body = self.convert_to_named(*body);
+                self.environment.unbind_option(parameter);
                 self.destination.abstraction(parameter, named_body)
             }
             Expression::Application {
@@ -319,39 +290,8 @@ pub fn to_named<G: FreshVariableNameGenerator>(
     destination: &mut ExpressionArena,
     variable_name_generator: G,
 ) -> ExpressionId {
-    let store = StoreBuilder::new(expressions).build_store(expression);
-    NameGeneration::new(
-        strings,
-        expressions,
-        destination,
-        store,
-        variable_name_generator,
-    )
-    .convert_to_named(expression)
-}
-
-pub fn is_named(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
-    match &expressions[expression] {
-        Expression::Variable { identifier: _ } => true,
-        Expression::NamelessVariable { index: _ } => false,
-        Expression::Abstraction { parameter: _, body } => is_named(expressions, *body),
-        Expression::NamelessAbstraction { body: _ } => false,
-        Expression::Application {
-            function,
-            arguments,
-        } => {
-            if !is_named(expressions, *function) {
-                false
-            } else {
-                for &argument in arguments.iter() {
-                    if !is_named(expressions, argument) {
-                        return false;
-                    }
-                }
-                true
-            }
-        }
-    }
+    NameGeneration::new(strings, expressions, destination, variable_name_generator)
+        .convert_to_named(expression)
 }
 
 #[cfg(test)]
@@ -360,7 +300,7 @@ mod tests {
     use crate::{
         alpha_equivalence::alpha_equivalent, equality::equals, parser::parse_expression,
         referencing_environment::ReferencingEnvironment, to_locally_nameless::to_locally_nameless,
-        variables::SuffixVariableNameGenerator,
+        to_named::is_named, variables::SuffixVariableNameGenerator,
     };
 
     use super::*;
