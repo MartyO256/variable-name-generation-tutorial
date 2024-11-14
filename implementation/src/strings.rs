@@ -21,6 +21,7 @@ impl StringId {
     }
 }
 
+#[derive(Debug)]
 pub struct StringArena {
     ids: HashMap<Rc<Box<[u8]>>, StringId>,
     strings: Vec<Rc<Box<[u8]>>>,

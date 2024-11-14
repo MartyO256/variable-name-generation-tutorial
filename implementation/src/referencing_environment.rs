@@ -123,7 +123,7 @@ impl ReferencingEnvironment {
     pub fn lookup(&self, identifier: StringId) -> Option<usize> {
         self.bindings_map
             .get(&identifier)
-            .and_then(|stack| stack.first().copied())
+            .and_then(|stack| stack.last().copied())
             .or_else(|| self.parent.as_ref()?.lookup(identifier))
     }
 

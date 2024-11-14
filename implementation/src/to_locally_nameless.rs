@@ -77,10 +77,14 @@ pub fn to_locally_nameless(
 #[cfg(test)]
 mod tests {
 
+    use rand::{thread_rng, Rng};
+
     use crate::{
         equality::equals,
         expression_helpers::{free_variables, is_locally_nameless},
         parser::{parse_expression, parse_mixed_expression},
+        pretty_print::to_string,
+        random_expressions::sample_expression,
         referencing_environment::ReferencingEnvironment,
         strings::StringArena,
         to_locally_nameless::to_locally_nameless,
@@ -143,5 +147,43 @@ mod tests {
             "λ. λ. λ. 3 1 (2 1)",
         );
         check_to_locally_nameless_structural_equality("x z (y z)", "x z (y z)");
+    }
+
+    fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
+        let (strings, expressions, expression) = sample_expression(rng, max_depth);
+        eprintln!(
+            "{}",
+            to_string(&strings, &expressions, 80, expression).unwrap()
+        );
+        let environment = Rc::new(ReferencingEnvironment::new());
+
+        let mut converted_expressions = ExpressionArena::new();
+
+        let nameless_expression = to_locally_nameless(
+            (environment.clone(), &expressions, expression),
+            &mut converted_expressions,
+        );
+        assert!(is_locally_nameless(
+            &converted_expressions,
+            nameless_expression
+        ));
+
+        assert!(
+            free_variables(environment.clone(), &expressions, expression).eq(&free_variables(
+                environment.clone(),
+                &converted_expressions,
+                nameless_expression
+            ))
+        );
+    }
+
+    #[test]
+    fn fuzz_tests() {
+        let mut rng = thread_rng();
+        let max_depth = 10;
+        let test_count = 30;
+        for _ in 0..test_count {
+            fuzz_test(&mut rng, max_depth);
+        }
     }
 }

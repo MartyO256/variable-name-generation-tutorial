@@ -7,6 +7,7 @@ pub struct DeBruijnIndex {
     index: usize,
 }
 
+#[derive(Debug)]
 pub struct ExpressionArena {
     expressions: Vec<Expression>,
 }
@@ -16,6 +17,7 @@ pub struct ExpressionId {
     index: usize,
 }
 
+#[derive(Debug)]
 pub enum Expression {
     Variable {
         identifier: StringId,

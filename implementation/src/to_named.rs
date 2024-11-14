@@ -333,11 +333,15 @@ pub fn to_named<G: FreshVariableNameGenerator>(
 #[cfg(test)]
 mod tests {
 
+    use rand::{thread_rng, Rng};
+
     use crate::{
         alpha_equivalence::alpha_equivalent,
         equality::equals,
         expression_helpers::{is_named, SuffixVariableNameGenerator},
         parser::parse_expression,
+        pretty_print::to_string,
+        random_expressions::sample_expression,
         referencing_environment::ReferencingEnvironment,
         to_locally_nameless::to_locally_nameless,
     };
@@ -463,5 +467,53 @@ mod tests {
         roundtrip_test("λx. λy. y");
         roundtrip_test("λf. λx. λy. f x");
         roundtrip_test("λf. λx. λy. f x y");
+    }
+
+    fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
+        let (mut strings, expressions, expression) = sample_expression(rng, max_depth);
+        eprintln!(
+            "{}",
+            to_string(&strings, &expressions, 80, expression).unwrap()
+        );
+        let mut nameless_expressions = ExpressionArena::new();
+        let mut named_expressions = ExpressionArena::new();
+        let variable_name_generator = SuffixVariableNameGenerator::new();
+        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+
+        let nameless_expression = to_locally_nameless(
+            (referencing_environment.clone(), &expressions, expression),
+            &mut nameless_expressions,
+        );
+        let named_expression = to_named(
+            &mut strings,
+            &nameless_expressions,
+            nameless_expression,
+            &mut named_expressions,
+            variable_name_generator,
+        );
+        eprintln!(
+            "{}",
+            to_string(&strings, &named_expressions, 80, named_expression).unwrap()
+        );
+        assert!(is_named(&named_expressions, named_expression));
+
+        assert!(alpha_equivalent(
+            (referencing_environment.clone(), &expressions, expression),
+            (
+                referencing_environment.clone(),
+                &named_expressions,
+                named_expression
+            )
+        ));
+    }
+
+    #[test]
+    fn fuzz_tests() {
+        let mut rng = thread_rng();
+        let max_depth = 10;
+        let test_count = 30;
+        for _ in 0..test_count {
+            fuzz_test(&mut rng, max_depth);
+        }
     }
 }

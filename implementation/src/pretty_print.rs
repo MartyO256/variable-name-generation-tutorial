@@ -158,7 +158,13 @@ pub fn to_string(
 #[cfg(test)]
 mod tests {
 
-    use crate::{equality::equals, parser::parse_expression};
+    use rand::{thread_rng, Rng};
+
+    use crate::{
+        equality::equals,
+        parser::{parse_expression, parse_mixed_expression},
+        random_expressions::sample_expression,
+    };
 
     use super::*;
 
@@ -188,5 +194,32 @@ mod tests {
         roundabout_test("λf. λx. f x");
         roundabout_test("λf. λx. f ((λg. g) x)");
         roundabout_test("λx. λy. λz. x z (y z)");
+    }
+
+    fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
+        let (mut strings, mut expressions, expression) = sample_expression(rng, max_depth);
+
+        eprintln!("{:#?}", expressions);
+        eprintln!("{:#?}", expression);
+        let input = to_string(&strings, &expressions, 80, expression).unwrap();
+        eprintln!("{}", input);
+
+        let parsed_expression =
+            parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
+
+        assert!(equals(
+            (&expressions, expression),
+            (&expressions, parsed_expression),
+        ));
+    }
+
+    #[test]
+    fn fuzz_tests() {
+        let mut rng = thread_rng();
+        let max_depth = 10;
+        let test_count = 30;
+        for _ in 0..test_count {
+            fuzz_test(&mut rng, max_depth);
+        }
     }
 }

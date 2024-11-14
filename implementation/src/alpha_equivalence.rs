@@ -194,6 +194,8 @@ mod tests {
         check_alpha_equivalence("λ. 1", "λ. 1", true);
         check_alpha_equivalence("λ_. λx. x", "λx. λy. y", true);
         check_alpha_equivalence("λf. λx. f x", "λg. λy. g y", true);
+        check_alpha_equivalence("λ. λ. 1", "λx. λx. x", true);
+        check_alpha_equivalence("λy. λy. y", "λx. λx. x", true);
 
         check_alpha_equivalence("x", "y", false);
         check_alpha_equivalence("λx. λf. f x", "λg. λy. g y", false);

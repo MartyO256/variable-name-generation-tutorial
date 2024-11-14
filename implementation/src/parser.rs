@@ -6,7 +6,7 @@ use nom::{
     character::complete::{alpha1, alphanumeric0, multispace0, multispace1, u32},
     combinator::{eof, map, opt, recognize},
     multi::separated_list1,
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{delimited, pair, terminated},
     Finish, IResult,
 };
 
@@ -127,7 +127,7 @@ fn expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     fn parenthesized_expression(input: &[u8]) -> IResult<&[u8], Expression> {
         delimited(
             left_parenthesis,
-            preceded(multispace0, expression1),
+            delimited(multispace0, expression1, multispace0),
             right_parenthesis,
         )(input)
     }
@@ -217,7 +217,7 @@ fn mixed_expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     fn parenthesized_expression(input: &[u8]) -> IResult<&[u8], Expression> {
         delimited(
             left_parenthesis,
-            preceded(multispace0, mixed_expression1),
+            delimited(multispace0, mixed_expression1, multispace0),
             right_parenthesis,
         )(input)
     }
