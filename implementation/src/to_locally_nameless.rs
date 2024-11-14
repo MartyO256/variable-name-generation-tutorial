@@ -51,7 +51,7 @@ impl<'a> Indexing<'a> {
             } => {
                 let indexed_function = self.convert_to_locally_nameless(*function);
                 let mut indexed_arguments = Vec::with_capacity(arguments.len());
-                for &argument in arguments.iter() {
+                for &argument in arguments {
                     let indexed_argument = self.convert_to_locally_nameless(argument);
                     indexed_arguments.push(indexed_argument)
                 }
@@ -79,11 +79,11 @@ mod tests {
 
     use crate::{
         equality::equals,
+        expression_helpers::{free_variables, is_locally_nameless},
         parser::{parse_expression, parse_mixed_expression},
         referencing_environment::ReferencingEnvironment,
         strings::StringArena,
         to_locally_nameless::to_locally_nameless,
-        variables::{free_variables, is_locally_nameless},
     };
 
     use super::*;

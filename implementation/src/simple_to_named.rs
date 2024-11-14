@@ -5,8 +5,8 @@ use std::{
 
 use crate::{
     expression::{DeBruijnIndex, Expression, ExpressionArena, ExpressionId},
+    expression_helpers::FreshVariableNameGenerator,
     strings::{StringArena, StringId},
-    variables::FreshVariableNameGenerator,
 };
 
 pub struct ReferencingEnvironment {
@@ -194,7 +194,7 @@ impl<'a> UsedVariables<'a> {
                 arguments,
             } => {
                 self.visit(*function);
-                for &argument in arguments.iter() {
+                for &argument in arguments {
                     self.visit(argument);
                 }
             }
@@ -298,9 +298,12 @@ pub fn to_named<G: FreshVariableNameGenerator>(
 mod tests {
 
     use crate::{
-        alpha_equivalence::alpha_equivalent, equality::equals, parser::parse_expression,
-        referencing_environment::ReferencingEnvironment, to_locally_nameless::to_locally_nameless,
-        to_named::is_named, variables::SuffixVariableNameGenerator,
+        alpha_equivalence::alpha_equivalent,
+        equality::equals,
+        expression_helpers::{is_named, SuffixVariableNameGenerator},
+        parser::parse_expression,
+        referencing_environment::ReferencingEnvironment,
+        to_locally_nameless::to_locally_nameless,
     };
 
     use super::*;

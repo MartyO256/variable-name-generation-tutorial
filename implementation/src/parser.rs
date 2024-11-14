@@ -255,7 +255,7 @@ fn lower(
         } => {
             let lowered_function = lower(strings, expressions, function);
             let mut lowered_arguments = Vec::with_capacity(arguments.len());
-            for argument in arguments.iter() {
+            for argument in arguments {
                 let lowered_argument = lower(strings, expressions, argument);
                 lowered_arguments.push(lowered_argument);
             }

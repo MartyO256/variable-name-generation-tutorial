@@ -6,8 +6,8 @@ use std::{
 
 use crate::{
     expression::{DeBruijnIndex, Expression, ExpressionArena, ExpressionId},
+    expression_helpers::FreshVariableNameGenerator,
     strings::{StringArena, StringId},
-    variables::FreshVariableNameGenerator,
 };
 
 #[derive(Clone)]
@@ -222,13 +222,13 @@ impl<'a> StoreBuilder<'a> {
                 arguments,
             } => {
                 self.visit(*function);
-                for &argument in arguments.iter() {
+                for &argument in arguments {
                     self.visit(argument);
                 }
                 let mut reference_sets = Vec::new();
                 let function_reference_set = self.store.get(*function);
                 reference_sets.push(function_reference_set);
-                for &argument in arguments.iter() {
+                for &argument in arguments {
                     let argument_reference_set = self.store.get(argument);
                     reference_sets.push(argument_reference_set);
                 }
@@ -330,37 +330,16 @@ pub fn to_named<G: FreshVariableNameGenerator>(
     .convert_to_named(expression)
 }
 
-pub fn is_named(expressions: &ExpressionArena, expression: ExpressionId) -> bool {
-    match &expressions[expression] {
-        Expression::Variable { identifier: _ } => true,
-        Expression::NamelessVariable { index: _ } => false,
-        Expression::Abstraction { parameter: _, body } => is_named(expressions, *body),
-        Expression::NamelessAbstraction { body: _ } => false,
-        Expression::Application {
-            function,
-            arguments,
-        } => {
-            if !is_named(expressions, *function) {
-                false
-            } else {
-                for &argument in arguments.iter() {
-                    if !is_named(expressions, argument) {
-                        return false;
-                    }
-                }
-                true
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
 
     use crate::{
-        alpha_equivalence::alpha_equivalent, equality::equals, parser::parse_expression,
-        referencing_environment::ReferencingEnvironment, to_locally_nameless::to_locally_nameless,
-        variables::SuffixVariableNameGenerator,
+        alpha_equivalence::alpha_equivalent,
+        equality::equals,
+        expression_helpers::{is_named, SuffixVariableNameGenerator},
+        parser::parse_expression,
+        referencing_environment::ReferencingEnvironment,
+        to_locally_nameless::to_locally_nameless,
     };
 
     use super::*;

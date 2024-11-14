@@ -62,7 +62,7 @@ fn expression2<'a>(
         } => {
             let function_doc = expression3(strings, pool, *function)?;
             let mut argument_docs = Vec::with_capacity(arguments.len());
-            for &argument in arguments.iter() {
+            for &argument in arguments {
                 let argument_doc = expression3(strings, pool, argument)?;
                 argument_docs.push(argument_doc);
             }
