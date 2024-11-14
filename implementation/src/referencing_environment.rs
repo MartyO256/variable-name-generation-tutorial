@@ -1,4 +1,7 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 use crate::{expression::DeBruijnIndex, strings::StringId};
 
@@ -48,6 +51,28 @@ impl ReferencingEnvironment {
             bindings_map: HashMap::with_capacity(capacity),
             size,
         }
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.size
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn domain(&self) -> HashSet<StringId> {
+        let mut keys: HashSet<StringId> = self.bindings_map.keys().cloned().collect();
+        if let Option::Some(parent) = self.parent.as_ref() {
+            keys.extend(parent.domain());
+        }
+        keys
+    }
+
+    pub fn domain_len(&self) -> usize {
+        self.bindings_map.len()
     }
 
     pub fn bind(&mut self, identifier: StringId) {
