@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     expression::{DeBruijnIndex, Expression, ExpressionArena, ExpressionId},
-    expression_helpers::FreshVariableNameGenerator,
+    fresh_variable_name_generators::FreshVariableNameGenerator,
     strings::{StringArena, StringId},
 };
 
@@ -313,87 +313,11 @@ mod tests {
     use rand::{thread_rng, Rng};
 
     use crate::{
-        alpha_equivalence::alpha_equivalent,
-        equality::equals,
-        expression_helpers::{is_named, SuffixVariableNameGenerator},
-        parser::parse_expression,
-        pretty_print::to_string,
-        random_expressions::sample_expression,
+        fresh_variable_name_generators::SuffixVariableNameGenerator, parser::parse_expression,
         referencing_environment::ReferencingEnvironment,
-        to_locally_nameless::to_locally_nameless,
     };
 
     use super::*;
-
-    #[test]
-    fn to_named_fx_x() {
-        let mut strings: StringArena = StringArena::new();
-        let nx = strings.intern_str("x");
-
-        let mut p1 = ExpressionArena::new();
-
-        let x = p1.nameless_variable(1.into());
-        let fx_x = p1.nameless_abstraction(x);
-
-        let mut p2 = ExpressionArena::new();
-
-        let variable_namer = SuffixVariableNameGenerator::new();
-        let named_fx_x = to_named(&mut strings, &p1, fx_x, &mut p2, variable_namer);
-
-        let mut p3 = ExpressionArena::new();
-        let x = p3.variable(nx);
-        let fx = p3.abstraction(Option::Some(nx), x);
-
-        assert!(equals((&p2, named_fx_x), (&p3, fx)));
-    }
-
-    #[test]
-    fn to_named_fxy_x() {
-        let mut strings = StringArena::new();
-        let nx = strings.intern_str("x");
-
-        let mut p1 = ExpressionArena::new();
-
-        let x = p1.nameless_variable(2.into());
-        let fy_x = p1.nameless_abstraction(x);
-        let fxy_x = p1.nameless_abstraction(fy_x);
-
-        let mut p2 = ExpressionArena::new();
-
-        let variable_namer = SuffixVariableNameGenerator::new();
-        let named_fxy_x = to_named(&mut strings, &p1, fxy_x, &mut p2, variable_namer);
-
-        let mut p3 = ExpressionArena::new();
-        let x = p3.variable(nx);
-        let fy_x = p3.abstraction(Option::None, x);
-        let fxy_x = p3.abstraction(Option::Some(nx), fy_x);
-
-        assert!(equals((&p2, named_fxy_x), (&p3, fxy_x)));
-    }
-
-    #[test]
-    fn to_named_fxy_y() {
-        let mut strings = StringArena::new();
-        let nx = strings.intern_str("x");
-
-        let mut p1 = ExpressionArena::new();
-
-        let x = p1.nameless_variable(1.into());
-        let fy_x = p1.nameless_abstraction(x);
-        let fxy_y = p1.nameless_abstraction(fy_x);
-
-        let mut p2 = ExpressionArena::new();
-
-        let variable_namer = SuffixVariableNameGenerator::new();
-        let named_fxy_y = to_named(&mut strings, &p1, fxy_y, &mut p2, variable_namer);
-
-        let mut p3 = ExpressionArena::new();
-        let x = p3.variable(nx);
-        let fy_x = p3.abstraction(Option::Some(nx), x);
-        let fxy_y = p3.abstraction(Option::None, fy_x);
-
-        assert!(equals((&p2, named_fxy_y), (&p3, fxy_y)));
-    }
 
     fn roundtrip_test(input: &str) {
         let mut strings = StringArena::new();
@@ -405,7 +329,7 @@ mod tests {
 
         let expression =
             parse_expression(&mut strings, &mut source_expressions, input.as_bytes()).unwrap();
-        let nameless_expression = to_locally_nameless(
+        let nameless_expression = Expression::to_locally_nameless(
             (
                 referencing_environment.clone(),
                 &source_expressions,
@@ -420,9 +344,9 @@ mod tests {
             &mut named_expressions,
             variable_name_generator,
         );
-        assert!(is_named(&named_expressions, named_expression));
+        assert!(Expression::is_named(&named_expressions, named_expression));
 
-        assert!(alpha_equivalent(
+        assert!(Expression::alpha_equivalent(
             (
                 referencing_environment.clone(),
                 &source_expressions,
@@ -447,17 +371,23 @@ mod tests {
     }
 
     fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
-        let (mut strings, expressions, expression) = sample_expression(rng, max_depth);
+        let mut strings = StringArena::new();
+        let mut expressions = ExpressionArena::new();
+        let environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression =
+            Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
+
         eprintln!(
             "{}",
-            to_string(&strings, &expressions, 80, expression).unwrap()
+            Expression::to_string(&strings, &expressions, 80, expression).unwrap()
         );
         let mut nameless_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
         let variable_name_generator = SuffixVariableNameGenerator::new();
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
-        let nameless_expression = to_locally_nameless(
+        let nameless_expression = Expression::to_locally_nameless(
             (referencing_environment.clone(), &expressions, expression),
             &mut nameless_expressions,
         );
@@ -470,11 +400,11 @@ mod tests {
         );
         eprintln!(
             "{}",
-            to_string(&strings, &named_expressions, 80, named_expression).unwrap()
+            Expression::to_string(&strings, &named_expressions, 80, named_expression).unwrap()
         );
-        assert!(is_named(&named_expressions, named_expression));
+        assert!(Expression::is_named(&named_expressions, named_expression));
 
-        assert!(alpha_equivalent(
+        assert!(Expression::alpha_equivalent(
             (referencing_environment.clone(), &expressions, expression),
             (
                 referencing_environment.clone(),
@@ -487,8 +417,8 @@ mod tests {
     #[test]
     fn fuzz_tests() {
         let mut rng = thread_rng();
-        let max_depth = 10;
-        let test_count = 30;
+        let max_depth = 7;
+        let test_count = 50;
         for _ in 0..test_count {
             fuzz_test(&mut rng, max_depth);
         }

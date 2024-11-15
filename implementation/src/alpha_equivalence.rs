@@ -5,6 +5,29 @@ use crate::{
     referencing_environment::ReferencingEnvironment,
 };
 
+impl Expression {
+    pub fn alpha_equivalent(
+        (environment1, expressions1, e1): (
+            Rc<ReferencingEnvironment>,
+            &ExpressionArena,
+            ExpressionId,
+        ),
+        (environment2, expressions2, e2): (
+            Rc<ReferencingEnvironment>,
+            &ExpressionArena,
+            ExpressionId,
+        ),
+    ) -> bool {
+        AlphaEquivalence::new(
+            expressions1,
+            &mut ReferencingEnvironment::new_frame(environment1),
+            expressions2,
+            &mut ReferencingEnvironment::new_frame(environment2),
+        )
+        .check_alpha_equivalence(e1, e2)
+    }
+}
+
 struct AlphaEquivalence<'a> {
     expressions1: &'a ExpressionArena,
     environment1: &'a mut ReferencingEnvironment,
@@ -143,25 +166,12 @@ impl<'a> AlphaEquivalence<'a> {
     }
 }
 
-pub fn alpha_equivalent(
-    (environment1, expressions1, e1): (Rc<ReferencingEnvironment>, &ExpressionArena, ExpressionId),
-    (environment2, expressions2, e2): (Rc<ReferencingEnvironment>, &ExpressionArena, ExpressionId),
-) -> bool {
-    AlphaEquivalence::new(
-        expressions1,
-        &mut ReferencingEnvironment::new_frame(environment1),
-        expressions2,
-        &mut ReferencingEnvironment::new_frame(environment2),
-    )
-    .check_alpha_equivalence(e1, e2)
-}
-
 #[cfg(test)]
 mod tests {
 
     use crate::{
-        alpha_equivalence::alpha_equivalent, parser::parse_mixed_expression,
-        referencing_environment::ReferencingEnvironment, strings::StringArena,
+        parser::parse_mixed_expression, referencing_environment::ReferencingEnvironment,
+        strings::StringArena,
     };
 
     use super::*;
@@ -177,7 +187,7 @@ mod tests {
             parse_mixed_expression(&mut strings, &mut expressions, input2.as_bytes()).unwrap();
 
         assert_eq!(
-            alpha_equivalent(
+            Expression::alpha_equivalent(
                 (referencing_environment.clone(), &expressions, expression1),
                 (referencing_environment.clone(), &expressions, expression2)
             ),

@@ -1,5 +1,14 @@
 use crate::expression::{Expression, ExpressionArena, ExpressionId};
 
+impl Expression {
+    pub fn equals(
+        (expressions1, e1): (&ExpressionArena, ExpressionId),
+        (expressions2, e2): (&ExpressionArena, ExpressionId),
+    ) -> bool {
+        Equality::new(expressions1, expressions2).check_equality(e1, e2)
+    }
+}
+
 struct Equality<'a> {
     expressions1: &'a ExpressionArena,
     expressions2: &'a ExpressionArena,
@@ -69,13 +78,6 @@ impl<'a> Equality<'a> {
     }
 }
 
-pub fn equals(
-    (expressions1, e1): (&ExpressionArena, ExpressionId),
-    (expressions2, e2): (&ExpressionArena, ExpressionId),
-) -> bool {
-    Equality::new(expressions1, expressions2).check_equality(e1, e2)
-}
-
 #[cfg(test)]
 mod tests {
     use crate::strings::StringArena;
@@ -91,9 +93,9 @@ mod tests {
         let r1 = expressions.variable(nx);
         let r2 = expressions.variable(nx);
 
-        assert!(equals((&expressions, r1), (&expressions, r1)));
-        assert!(equals((&expressions, r1), (&expressions, r2)));
-        assert!(equals((&expressions, r2), (&expressions, r2)));
+        assert!(Expression::equals((&expressions, r1), (&expressions, r1)));
+        assert!(Expression::equals((&expressions, r1), (&expressions, r2)));
+        assert!(Expression::equals((&expressions, r2), (&expressions, r2)));
     }
 
     #[test]
@@ -102,8 +104,8 @@ mod tests {
         let r1 = expressions.nameless_variable(1.into());
         let r2 = expressions.nameless_variable(1.into());
 
-        assert!(equals((&expressions, r1), (&expressions, r1)));
-        assert!(equals((&expressions, r1), (&expressions, r2)));
-        assert!(equals((&expressions, r2), (&expressions, r2)));
+        assert!(Expression::equals((&expressions, r1), (&expressions, r1)));
+        assert!(Expression::equals((&expressions, r1), (&expressions, r2)));
+        assert!(Expression::equals((&expressions, r2), (&expressions, r2)));
     }
 }

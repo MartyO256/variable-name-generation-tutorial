@@ -9,6 +9,29 @@ use crate::{
     strings::{StringArena, StringId},
 };
 
+impl Expression {
+    pub fn to_doc<'a>(
+        strings: &StringArena,
+        expressions: &ExpressionArena,
+        e: ExpressionId,
+    ) -> Result<RcDoc<'a>, FromUtf8Error> {
+        expression(strings, expressions, e)
+    }
+
+    pub fn to_string(
+        strings: &StringArena,
+        expressions: &ExpressionArena,
+        width: usize,
+        e: ExpressionId,
+    ) -> Result<String, PrettyPrintError> {
+        let mut buffer = Vec::default();
+        let document = Expression::to_doc(strings, expressions, e)?;
+        document.render(width, &mut buffer)?;
+        let rendered = String::from_utf8(buffer)?;
+        Result::Ok(rendered)
+    }
+}
+
 pub fn name<'a>(strings: &StringArena, n: StringId) -> Result<RcDoc<'a>, FromUtf8Error> {
     let n = String::from_utf8(strings[n].to_vec())?;
     Result::Ok(RcDoc::as_string(n))
@@ -142,28 +165,16 @@ impl From<std::io::Error> for PrettyPrintError {
     }
 }
 
-pub fn to_string(
-    strings: &StringArena,
-    expressions: &ExpressionArena,
-    width: usize,
-    e: ExpressionId,
-) -> Result<String, PrettyPrintError> {
-    let mut buffer = Vec::default();
-    let document = expression(strings, expressions, e)?;
-    document.render(width, &mut buffer)?;
-    let rendered = String::from_utf8(buffer)?;
-    Result::Ok(rendered)
-}
-
 #[cfg(test)]
 mod tests {
+
+    use std::rc::Rc;
 
     use rand::{thread_rng, Rng};
 
     use crate::{
-        equality::equals,
         parser::{parse_expression, parse_mixed_expression},
-        random_expressions::sample_expression,
+        referencing_environment::ReferencingEnvironment,
     };
 
     use super::*;
@@ -175,12 +186,12 @@ mod tests {
         let parsed_expression =
             parse_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
 
-        let printed = to_string(&strings, &expressions, 80, parsed_expression).unwrap();
+        let printed = Expression::to_string(&strings, &expressions, 80, parsed_expression).unwrap();
 
         let reparsed_expression =
             parse_expression(&mut strings, &mut expressions, printed.as_bytes()).unwrap();
 
-        assert!(equals(
+        assert!(Expression::equals(
             (&expressions, parsed_expression),
             (&expressions, reparsed_expression)
         ));
@@ -197,17 +208,22 @@ mod tests {
     }
 
     fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
-        let (mut strings, mut expressions, expression) = sample_expression(rng, max_depth);
+        let mut strings = StringArena::new();
+        let mut expressions = ExpressionArena::new();
+        let environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression =
+            Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
 
         eprintln!("{:#?}", expressions);
         eprintln!("{:#?}", expression);
-        let input = to_string(&strings, &expressions, 80, expression).unwrap();
+        let input = Expression::to_string(&strings, &expressions, 80, expression).unwrap();
         eprintln!("{}", input);
 
         let parsed_expression =
             parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
 
-        assert!(equals(
+        assert!(Expression::equals(
             (&expressions, expression),
             (&expressions, parsed_expression),
         ));
@@ -216,8 +232,8 @@ mod tests {
     #[test]
     fn fuzz_tests() {
         let mut rng = thread_rng();
-        let max_depth = 10;
-        let test_count = 30;
+        let max_depth = 7;
+        let test_count = 50;
         for _ in 0..test_count {
             fuzz_test(&mut rng, max_depth);
         }

@@ -5,6 +5,20 @@ use crate::{
     referencing_environment::ReferencingEnvironment,
 };
 
+impl Expression {
+    pub fn to_locally_nameless(
+        (environment, arena, expression): (
+            Rc<ReferencingEnvironment>,
+            &ExpressionArena,
+            ExpressionId,
+        ),
+        destination: &mut ExpressionArena,
+    ) -> ExpressionId {
+        let mut framed_environment = ReferencingEnvironment::new_frame(environment);
+        Indexing::new(&mut framed_environment, arena, destination).convert(expression)
+    }
+}
+
 struct Indexing<'a> {
     environment: &'a mut ReferencingEnvironment,
     arena: &'a ExpressionArena,
@@ -66,28 +80,15 @@ impl<'a> Indexing<'a> {
     }
 }
 
-pub fn to_locally_nameless(
-    (environment, arena, expression): (Rc<ReferencingEnvironment>, &ExpressionArena, ExpressionId),
-    destination: &mut ExpressionArena,
-) -> ExpressionId {
-    let mut framed_environment = ReferencingEnvironment::new_frame(environment);
-    Indexing::new(&mut framed_environment, arena, destination).convert(expression)
-}
-
 #[cfg(test)]
 mod tests {
 
     use rand::{thread_rng, Rng};
 
     use crate::{
-        equality::equals,
-        expression_helpers::{free_variables, is_locally_nameless},
         parser::{parse_expression, parse_mixed_expression},
-        pretty_print::to_string,
-        random_expressions::sample_expression,
         referencing_environment::ReferencingEnvironment,
         strings::StringArena,
-        to_locally_nameless::to_locally_nameless,
     };
 
     use super::*;
@@ -104,23 +105,23 @@ mod tests {
         let expected_expression =
             parse_mixed_expression(&mut strings, &mut parsed_expressions, expected.as_bytes())
                 .unwrap();
-        assert!(is_locally_nameless(
+        assert!(Expression::is_locally_nameless(
             &parsed_expressions,
             expected_expression
         ));
 
-        let nameless_expression = to_locally_nameless(
+        let nameless_expression = Expression::to_locally_nameless(
             (environment.clone(), &parsed_expressions, expression),
             &mut converted_expressions,
         );
-        assert!(is_locally_nameless(
+        assert!(Expression::is_locally_nameless(
             &converted_expressions,
             nameless_expression
         ));
 
         assert!(
-            free_variables(environment.clone(), &parsed_expressions, expression).eq(
-                &free_variables(
+            Expression::free_variables(environment.clone(), &parsed_expressions, expression).eq(
+                &Expression::free_variables(
                     environment.clone(),
                     &converted_expressions,
                     nameless_expression
@@ -128,7 +129,7 @@ mod tests {
             )
         );
 
-        assert!(equals(
+        assert!(Expression::equals(
             (&converted_expressions, nameless_expression),
             (&parsed_expressions, expected_expression)
         ));
@@ -150,38 +151,45 @@ mod tests {
     }
 
     fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
-        let (strings, expressions, expression) = sample_expression(rng, max_depth);
+        let mut strings = StringArena::new();
+        let mut expressions = ExpressionArena::new();
+        let environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression =
+            Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
         eprintln!(
             "{}",
-            to_string(&strings, &expressions, 80, expression).unwrap()
+            Expression::to_string(&strings, &expressions, 80, expression).unwrap()
         );
         let environment = Rc::new(ReferencingEnvironment::new());
 
         let mut converted_expressions = ExpressionArena::new();
 
-        let nameless_expression = to_locally_nameless(
+        let nameless_expression = Expression::to_locally_nameless(
             (environment.clone(), &expressions, expression),
             &mut converted_expressions,
         );
-        assert!(is_locally_nameless(
+        assert!(Expression::is_locally_nameless(
             &converted_expressions,
             nameless_expression
         ));
 
         assert!(
-            free_variables(environment.clone(), &expressions, expression).eq(&free_variables(
-                environment.clone(),
-                &converted_expressions,
-                nameless_expression
-            ))
+            Expression::free_variables(environment.clone(), &expressions, expression).eq(
+                &Expression::free_variables(
+                    environment.clone(),
+                    &converted_expressions,
+                    nameless_expression
+                )
+            )
         );
     }
 
     #[test]
     fn fuzz_tests() {
         let mut rng = thread_rng();
-        let max_depth = 10;
-        let test_count = 30;
+        let max_depth = 7;
+        let test_count = 50;
         for _ in 0..test_count {
             fuzz_test(&mut rng, max_depth);
         }

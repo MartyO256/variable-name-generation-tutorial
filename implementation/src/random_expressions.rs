@@ -1,26 +1,51 @@
 extern crate rand;
 
+use std::rc::Rc;
+
 use rand::Rng;
 
 use crate::{
-    expression::{DeBruijnIndex, ExpressionArena, ExpressionId},
+    expression::{DeBruijnIndex, Expression, ExpressionArena, ExpressionId},
     referencing_environment::ReferencingEnvironment,
     strings::{StringArena, StringId},
 };
 
+impl Expression {
+    pub fn sample<'a, R: Rng>(
+        strings: &'a mut StringArena,
+        expressions: &'a mut ExpressionArena,
+        environment: Rc<ReferencingEnvironment>,
+        rng: &'a mut R,
+        max_depth: usize,
+    ) -> ExpressionId {
+        ExpressionSampler::new(
+            strings,
+            expressions,
+            ReferencingEnvironment::new_frame(environment),
+            rng,
+        )
+        .sample(max_depth)
+    }
+}
+
 struct ExpressionSampler<'a, R: Rng> {
-    strings: StringArena,
-    expressions: ExpressionArena,
+    strings: &'a mut StringArena,
+    expressions: &'a mut ExpressionArena,
     environment: ReferencingEnvironment,
     rng: &'a mut R,
 }
 
 impl<'a, R: Rng> ExpressionSampler<'a, R> {
-    pub fn new(rng: &'a mut R) -> ExpressionSampler<'a, R> {
+    pub fn new(
+        strings: &'a mut StringArena,
+        expressions: &'a mut ExpressionArena,
+        environment: ReferencingEnvironment,
+        rng: &'a mut R,
+    ) -> ExpressionSampler<'a, R> {
         ExpressionSampler {
-            strings: StringArena::new(),
-            expressions: ExpressionArena::new(),
-            environment: ReferencingEnvironment::new(),
+            strings,
+            expressions,
+            environment,
             rng,
         }
     }
@@ -30,10 +55,10 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
             return self.sample_variable_expression();
         }
 
-        match self.rng.gen_range(0..=2) {
+        match self.rng.gen_range(0..=7) {
             0 => self.sample_variable_expression(),
-            1 => self.sample_lambda_expression(max_depth),
-            2 => self.sample_application_expression(max_depth),
+            1..=3 => self.sample_lambda_expression(max_depth),
+            4..=7 => self.sample_application_expression(max_depth),
             _ => unreachable!(),
         }
     }
@@ -75,6 +100,7 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
     }
 
     fn sample_lambda_expression(&mut self, max_depth: usize) -> ExpressionId {
+        debug_assert!(max_depth > 0);
         match self.rng.gen_range(0..=1) {
             0 => self.sample_named_lambda_expression(max_depth),
             1 => self.sample_nameless_lambda_expression(max_depth),
@@ -83,6 +109,7 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
     }
 
     fn sample_named_lambda_expression(&mut self, max_depth: usize) -> ExpressionId {
+        debug_assert!(max_depth > 0);
         let parameter = {
             if self.rng.gen_bool(0.1) {
                 Option::None
@@ -98,6 +125,7 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
     }
 
     fn sample_nameless_lambda_expression(&mut self, max_depth: usize) -> ExpressionId {
+        debug_assert!(max_depth > 0);
         self.environment.shift();
         let body = self.sample_expression(max_depth - 1);
         self.environment.unshift();
@@ -105,6 +133,7 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
     }
 
     fn sample_application_expression(&mut self, max_depth: usize) -> ExpressionId {
+        debug_assert!(max_depth > 0);
         let function = self.sample_expression(max_depth - 1);
         let arguments_count = self.rng.gen_range(1..=5);
         let mut arguments = Vec::with_capacity(arguments_count);
@@ -154,15 +183,8 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
         }
     }
 
-    pub fn sample(mut self, max_depth: usize) -> (StringArena, ExpressionArena, ExpressionId) {
-        let expression = self.sample_nameless_lambda_expression(max_depth);
-        (self.strings, self.expressions, expression)
+    pub fn sample(mut self, max_depth: usize) -> ExpressionId {
+        let expression = self.sample_expression(max_depth);
+        expression
     }
-}
-
-pub fn sample_expression<R: Rng>(
-    rng: &mut R,
-    max_depth: usize,
-) -> (StringArena, ExpressionArena, ExpressionId) {
-    ExpressionSampler::new(rng).sample(max_depth)
 }
