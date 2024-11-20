@@ -1,8 +1,4 @@
-use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet},
-    rc::Rc,
-};
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     expression::{DeBruijnIndex, Expression, ExpressionArena, ExpressionId},
@@ -10,237 +6,385 @@ use crate::{
     strings::{StringArena, StringId},
 };
 
-#[derive(Clone)]
-struct ReferenceSet {
-    variables: HashSet<StringId>,
-    indices: HashMap<DeBruijnIndex, Rc<RefCell<Option<StringId>>>>,
-}
-
-struct BindingStack {
-    stack: Vec<Rc<RefCell<Option<StringId>>>>,
-}
-
-struct Store {
-    reference_sets: Vec<Option<ReferenceSet>>,
-}
-
-impl ReferenceSet {
-    pub fn variable(identifier: StringId) -> ReferenceSet {
-        let mut variables = HashSet::new();
-        variables.insert(identifier);
-        ReferenceSet {
+impl Expression {
+    pub fn to_named<G: FreshVariableNameGenerator>(
+        strings: &mut StringArena,
+        expressions: &ExpressionArena,
+        expression: ExpressionId,
+        destination: &mut ExpressionArena,
+        variable_name_generator: G,
+    ) -> ExpressionId {
+        let mut variables = VariableNameArena::new();
+        let constraints =
+            ConstraintStoreBuilder::new(expressions, &mut variables).build(expression);
+        NameGeneration::new(
+            strings,
+            expressions,
+            destination,
             variables,
-            indices: HashMap::new(),
+            constraints,
+            variable_name_generator,
+        )
+        .convert_to_named(expression)
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+struct VariableNameId {
+    index: usize,
+}
+
+impl VariableNameId {
+    #[inline]
+    pub fn new(index: usize) -> VariableNameId {
+        VariableNameId { index }
+    }
+
+    #[inline]
+    pub fn into_usize(self) -> usize {
+        self.index
+    }
+}
+
+struct VariableNameArena {
+    names: Vec<Option<StringId>>,
+}
+
+impl VariableNameArena {
+    pub fn new() -> VariableNameArena {
+        VariableNameArena { names: Vec::new() }
+    }
+
+    pub fn len(&self) -> usize {
+        self.names.len()
+    }
+
+    pub fn has(&self, id: VariableNameId) -> bool {
+        id.into_usize() < self.len()
+    }
+
+    pub fn new_name(&mut self) -> VariableNameId {
+        let index = self.len();
+        self.names.push(Option::None);
+        VariableNameId::new(index)
+    }
+
+    pub fn lookup_name(&self, id: VariableNameId) -> Option<StringId> {
+        debug_assert!(self.has(id));
+        self.names[id.into_usize()].clone()
+    }
+
+    pub fn update_name(&mut self, id: VariableNameId, name: StringId) {
+        debug_assert!(self.has(id));
+        self.names[id.into_usize()] = Option::Some(name);
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum ParameterRestriction {
+    BoundVariable { id: VariableNameId },
+    FreeVariable { id: StringId },
+}
+
+#[derive(Clone)]
+enum Constraint {
+    Abstraction {
+        parameter: Option<StringId>,
+    },
+    NamelessAbstraction {
+        parameter: VariableNameId,
+        restrictions: HashSet<ParameterRestriction>,
+        used: bool,
+    },
+    Variable {
+        name: VariableNameId,
+    },
+}
+
+struct ConstraintStore {
+    constraints: Vec<Option<Constraint>>,
+}
+
+impl ConstraintStore {
+    pub fn new(size: usize) -> ConstraintStore {
+        ConstraintStore {
+            constraints: vec![Option::None; size],
         }
     }
 
-    pub fn index(index: DeBruijnIndex, cell: Rc<RefCell<Option<StringId>>>) -> ReferenceSet {
-        let mut indices = HashMap::new();
-        indices.insert(index, cell);
-        ReferenceSet {
-            variables: HashSet::new(),
-            indices,
+    pub fn len(&self) -> usize {
+        self.constraints.len()
+    }
+
+    pub fn has(&self, id: ExpressionId) -> bool {
+        id.into_usize() < self.len()
+    }
+
+    pub fn set(&mut self, expression: ExpressionId, constraint: Constraint) {
+        self.constraints[expression.into_usize()] = Option::Some(constraint)
+    }
+
+    pub fn get(&self, expression: ExpressionId) -> Option<&Constraint> {
+        debug_assert!(self.has(expression));
+        self.constraints[expression.into_usize()].as_ref()
+    }
+
+    pub fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Constraint> {
+        debug_assert!(self.has(expression));
+        self.constraints[expression.into_usize()].as_mut()
+    }
+}
+
+pub struct ReferencingEnvironment {
+    bindings_map: HashMap<StringId, usize>,
+    binders: Vec<ExpressionId>,
+    size: usize,
+}
+
+impl ReferencingEnvironment {
+    #[inline]
+    pub fn new() -> ReferencingEnvironment {
+        ReferencingEnvironment {
+            bindings_map: HashMap::new(),
+            binders: Vec::new(),
+            size: 0,
         }
     }
 
-    pub fn union(sets: Vec<&ReferenceSet>) -> ReferenceSet {
-        let mut variables = HashSet::new();
-        for &set in sets.iter() {
-            for &variable in set.variables.iter() {
-                variables.insert(variable);
-            }
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.size
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn is_bound(&self, identifier: StringId) -> bool {
+        self.bindings_map.contains_key(&identifier)
+    }
+
+    #[inline]
+    pub fn is_free(&self, identifier: StringId) -> bool {
+        !self.bindings_map.contains_key(&identifier)
+    }
+
+    pub fn domain_len(&self) -> usize {
+        self.bindings_map.len()
+    }
+
+    pub fn bind(&mut self, identifier: StringId, binder: ExpressionId) {
+        if let Option::Some(count) = self.bindings_map.get_mut(&identifier) {
+            *count += 1;
+        } else {
+            self.bindings_map.insert(identifier, 1);
         }
-        let mut indices = HashMap::new();
-        for &set in sets.iter() {
-            for (&index, name) in set.indices.iter() {
-                indices.insert(index, name.clone());
-            }
+        self.binders.push(binder);
+        self.size += 1;
+    }
+
+    pub fn unbind(&mut self, identifier: StringId) {
+        debug_assert!(self.bindings_map.contains_key(&identifier));
+        let count = self.bindings_map.get_mut(&identifier).unwrap();
+        debug_assert!(*count > 0);
+        *count -= 1;
+        if *count == 0 {
+            self.bindings_map.remove(&identifier);
         }
-        ReferenceSet { variables, indices }
+        self.binders.pop();
+        self.size -= 1;
     }
 
-    fn unshifted_indices(&self) -> HashMap<DeBruijnIndex, Rc<RefCell<Option<StringId>>>> {
-        let mut indices = HashMap::new();
-        for (&index, name) in self.indices.iter() {
-            let i = index.into_usize();
-            if i > 1 {
-                indices.insert((i - 1).into(), name.clone());
-            }
+    #[inline]
+    pub fn shift(&mut self, binder: ExpressionId) {
+        self.binders.push(binder);
+        self.size += 1;
+    }
+
+    #[inline]
+    pub fn unshift(&mut self) {
+        debug_assert!(self.size > 0);
+        self.binders.pop();
+        self.size -= 1;
+    }
+
+    #[inline]
+    pub fn bind_option(&mut self, identifier: Option<StringId>, binder: ExpressionId) {
+        match identifier {
+            Option::Some(identifier) => self.bind(identifier, binder),
+            Option::None => self.shift(binder),
         }
-        indices
     }
 
-    pub fn unshift(&self) -> ReferenceSet {
-        let variables = self.variables.clone();
-        let indices = self.unshifted_indices();
-        ReferenceSet { variables, indices }
-    }
-
-    pub fn unbind(&self, identifier: StringId) -> ReferenceSet {
-        let mut variables = self.variables.clone();
-        variables.remove(&identifier);
-        let indices = self.unshifted_indices();
-        ReferenceSet { variables, indices }
-    }
-
-    pub fn unbind_option(&self, identifier: Option<StringId>) -> ReferenceSet {
+    #[inline]
+    pub fn unbind_option(&mut self, identifier: Option<StringId>) {
         match identifier {
             Option::Some(identifier) => self.unbind(identifier),
             Option::None => self.unshift(),
         }
     }
+}
 
-    pub fn len(&self) -> usize {
-        self.variables.len() + self.indices.len()
-    }
-
-    pub fn names(&self) -> HashSet<StringId> {
-        let mut names = HashSet::with_capacity(self.len());
-        for &name in self.variables.iter() {
-            names.insert(name);
-        }
-        for index in self.indices.values() {
-            if let Option::Some(name) = *index.borrow() {
-                names.insert(name);
-            }
-        }
-        names
-    }
-
-    pub fn lookup_name(&self, index: DeBruijnIndex) -> Option<StringId> {
-        self.indices.get(&index).and_then(|cell| *cell.borrow())
-    }
-
-    pub fn select_name(&self, index: DeBruijnIndex, name: StringId) {
-        debug_assert!(self.contains_index(index));
-        *self.indices.get(&index).unwrap().borrow_mut() = Option::Some(name);
-    }
-
-    pub fn contains_index(&self, index: DeBruijnIndex) -> bool {
-        self.indices.contains_key(&index)
+impl Default for ReferencingEnvironment {
+    fn default() -> ReferencingEnvironment {
+        ReferencingEnvironment::new()
     }
 }
 
-impl BindingStack {
-    pub fn new() -> BindingStack {
-        BindingStack { stack: Vec::new() }
-    }
-
-    #[allow(dead_code)]
-    pub fn with_capacity(capacity: usize) -> BindingStack {
-        BindingStack {
-            stack: Vec::with_capacity(capacity),
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.stack.len()
-    }
-
-    pub fn push(&mut self) {
-        self.stack.push(Rc::new(RefCell::new(Option::None)))
-    }
-
-    pub fn pop(&mut self) {
-        debug_assert!(self.len() > 0);
-        self.stack.pop().unwrap();
-    }
-
-    pub fn lookup(&self, index: DeBruijnIndex) -> &Rc<RefCell<Option<StringId>>> {
-        debug_assert!(index.into_usize() <= self.len());
-        &self.stack[self.len() - index.into_usize()]
-    }
-}
-
-impl Store {
-    pub fn new(n: usize) -> Store {
-        Store {
-            reference_sets: vec![Option::None; n],
-        }
-    }
-
-    pub fn has(&self, expression: ExpressionId) -> bool {
-        expression.into_usize() < self.reference_sets.len()
-    }
-
-    pub fn set(&mut self, expression: ExpressionId, reference_set: ReferenceSet) {
-        debug_assert!(self.has(expression));
-        self.reference_sets[expression.into_usize()] = Option::Some(reference_set)
-    }
-
-    pub fn get(&self, expression: ExpressionId) -> &ReferenceSet {
-        debug_assert!(self.has(expression));
-        self.reference_sets[expression.into_usize()]
-            .as_ref()
-            .unwrap()
-    }
-}
-
-struct StoreBuilder<'a> {
+struct ConstraintStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
-    bindings: BindingStack,
-    store: Store,
+    variables: &'a mut VariableNameArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
 }
 
-impl<'a> StoreBuilder<'a> {
-    pub fn new(expressions: &'a ExpressionArena) -> StoreBuilder<'a> {
-        StoreBuilder {
+impl<'a> ConstraintStoreBuilder<'a> {
+    pub fn new(
+        expressions: &'a ExpressionArena,
+        variables: &'a mut VariableNameArena,
+    ) -> ConstraintStoreBuilder<'a> {
+        ConstraintStoreBuilder {
             expressions,
-            bindings: BindingStack::new(),
-            store: Store::new(expressions.len()),
+            variables,
+            constraints: ConstraintStore::new(expressions.len()),
+            environment: ReferencingEnvironment::new(),
         }
     }
 
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable { identifier } => {
-                self.store
-                    .set(expression, ReferenceSet::variable(*identifier));
+                if self.environment.is_free(*identifier) {
+                    for binder in self.environment.binders.iter() {
+                        match self.constraints.get_mut(*binder) {
+                            Option::Some(Constraint::NamelessAbstraction {
+                                parameter: _,
+                                restrictions,
+                                used: _,
+                            }) => {
+                                restrictions
+                                    .insert(ParameterRestriction::FreeVariable { id: *identifier });
+                            }
+                            Option::Some(Constraint::Abstraction { parameter: _ }) => {}
+                            _ => unreachable!(),
+                        }
+                    }
+                }
             }
             Expression::NamelessVariable { index } => {
-                let cell = self.bindings.lookup(*index);
-                self.store
-                    .set(expression, ReferenceSet::index(*index, cell.clone()));
+                let parameter = self.lookup(*index);
+                self.constraints
+                    .set(expression, Constraint::Variable { name: parameter });
+                let mut additional_restrictions = HashSet::new();
+                for binder in self
+                    .environment
+                    .binders
+                    .iter()
+                    .rev()
+                    .take(index.into_usize() - 1)
+                {
+                    match self.constraints.get_mut(*binder) {
+                        Option::Some(Constraint::NamelessAbstraction {
+                            parameter: _,
+                            restrictions,
+                            used: _,
+                        }) => {
+                            restrictions
+                                .insert(ParameterRestriction::BoundVariable { id: parameter });
+                        }
+                        Option::Some(Constraint::Abstraction {
+                            parameter: Option::Some(parameter),
+                        }) => {
+                            additional_restrictions
+                                .insert(ParameterRestriction::FreeVariable { id: *parameter });
+                        }
+                        Option::Some(Constraint::Abstraction {
+                            parameter: Option::None,
+                        }) => {}
+                        _ => unreachable!(),
+                    }
+                }
+
+                let binder =
+                    self.environment.binders[self.environment.binders.len() - index.into_usize()];
+                if let Option::Some(Constraint::NamelessAbstraction {
+                    parameter: _,
+                    restrictions,
+                    used,
+                }) = self.constraints.get_mut(binder)
+                {
+                    *used = true;
+                    for additional_restriction in additional_restrictions {
+                        restrictions.insert(additional_restriction);
+                    }
+                } else {
+                    unreachable!()
+                }
             }
             Expression::Abstraction { parameter, body } => {
-                self.bindings.push();
-                self.visit(*body);
-                self.bindings.pop();
-                let body_reference_set = self.store.get(*body);
-                self.store
-                    .set(expression, body_reference_set.unbind_option(*parameter));
+                self.constraints.set(
+                    expression,
+                    Constraint::Abstraction {
+                        parameter: *parameter,
+                    },
+                );
+                match parameter {
+                    Option::Some(parameter) => {
+                        self.environment.bind(*parameter, expression);
+                        self.visit(*body);
+                        self.environment.unbind(*parameter);
+                    }
+                    Option::None => {
+                        self.environment.shift(expression);
+                        self.visit(*body);
+                        self.environment.unshift();
+                    }
+                }
             }
             Expression::NamelessAbstraction { body } => {
-                self.bindings.push();
+                let variable = self.variables.new_name();
+                self.constraints.set(
+                    expression,
+                    Constraint::NamelessAbstraction {
+                        parameter: variable,
+                        restrictions: HashSet::new(),
+                        used: false,
+                    },
+                );
+                self.environment.shift(expression);
                 self.visit(*body);
-                self.bindings.pop();
-                let body_reference_set = self.store.get(*body);
-                self.store.set(expression, body_reference_set.unshift());
+                self.environment.unshift();
             }
             Expression::Application {
                 function,
                 arguments,
             } => {
                 self.visit(*function);
-                for &argument in arguments {
-                    self.visit(argument);
+                for argument in arguments {
+                    self.visit(*argument);
                 }
-                let mut reference_sets = Vec::new();
-                let function_reference_set = self.store.get(*function);
-                reference_sets.push(function_reference_set);
-                for &argument in arguments {
-                    let argument_reference_set = self.store.get(argument);
-                    reference_sets.push(argument_reference_set);
-                }
-                let reference_set = ReferenceSet::union(reference_sets);
-                self.store.set(expression, reference_set);
             }
         }
     }
 
-    pub fn build_store(mut self, expression: ExpressionId) -> Store {
+    pub fn build(mut self, expression: ExpressionId) -> ConstraintStore {
         self.visit(expression);
-        self.store
+        self.constraints
+    }
+
+    fn lookup(&mut self, index: DeBruijnIndex) -> VariableNameId {
+        let binder = self.environment.binders[self.environment.binders.len() - index.into_usize()];
+        if let Option::Some(Constraint::NamelessAbstraction {
+            parameter,
+            restrictions: _,
+            used: _,
+        }) = self.constraints.get(binder)
+        {
+            parameter.clone()
+        } else {
+            unreachable!()
+        }
     }
 }
 
@@ -248,7 +392,8 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     strings: &'a mut StringArena,
     provider: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
-    store: Store,
+    variables: VariableNameArena,
+    constraints: ConstraintStore,
     variable_name_generator: G,
 }
 
@@ -257,81 +402,98 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         strings: &'a mut StringArena,
         provider: &'a ExpressionArena,
         destination: &'a mut ExpressionArena,
-        store: Store,
+        variables: VariableNameArena,
+        constraints: ConstraintStore,
         variable_name_generator: G,
     ) -> NameGeneration<'a, G> {
         NameGeneration {
             strings,
             provider,
             destination,
-            store,
+            variables,
+            constraints,
             variable_name_generator,
         }
     }
 
-    pub fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+    fn to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.provider[expression] {
             Expression::Variable { identifier } => self.destination.variable(*identifier),
-            Expression::NamelessVariable { index } => {
-                let reference_set = self.store.get(expression);
-                let identifier = reference_set.lookup_name(*index).unwrap();
-                self.destination.variable(identifier)
+            Expression::NamelessVariable { index: _ } => {
+                if let Option::Some(Constraint::Variable { name }) =
+                    self.constraints.get(expression)
+                {
+                    let identifier = self.variables.lookup_name(*name).unwrap();
+                    self.destination.variable(identifier)
+                } else {
+                    unreachable!()
+                }
             }
             Expression::Abstraction { parameter, body } => {
-                let named_body = self.convert_to_named(*body);
+                let named_body = self.to_named(*body);
                 self.destination.abstraction(*parameter, named_body)
             }
             Expression::NamelessAbstraction { body } => {
-                let reference_set = self.store.get(*body);
-                let parameter = if reference_set.contains_index(1.into()) {
-                    let identifiers = reference_set.names();
-                    let identifier = self
-                        .variable_name_generator
-                        .fresh_name(self.strings, &identifiers);
-                    reference_set.select_name(1.into(), identifier);
-                    Option::Some(identifier)
+                if let Option::Some(Constraint::NamelessAbstraction {
+                    parameter,
+                    restrictions,
+                    used,
+                }) = self.constraints.get(expression)
+                {
+                    let parameter = if *used {
+                        let mut identifiers = HashSet::new();
+                        for &restriction in restrictions {
+                            match restriction {
+                                ParameterRestriction::BoundVariable { id } => {
+                                    if let Option::Some(identifier) = self.variables.lookup_name(id)
+                                    {
+                                        identifiers.insert(identifier);
+                                    }
+                                }
+                                ParameterRestriction::FreeVariable { id } => {
+                                    identifiers.insert(id);
+                                }
+                            }
+                        }
+                        let identifier = self
+                            .variable_name_generator
+                            .fresh_name(self.strings, &identifiers);
+                        self.variables.update_name(*parameter, identifier);
+                        Option::Some(identifier)
+                    } else {
+                        Option::None
+                    };
+                    let named_body = self.to_named(*body);
+                    self.destination.abstraction(parameter, named_body)
                 } else {
-                    Option::None
-                };
-                let named_body = self.convert_to_named(*body);
-                self.destination.abstraction(parameter, named_body)
+                    unreachable!()
+                }
             }
             Expression::Application {
                 function,
                 arguments,
             } => {
-                let named_function = self.convert_to_named(*function);
-                let named_arguments = arguments
-                    .iter()
-                    .map(|&argument| self.convert_to_named(argument))
-                    .collect();
+                let named_function = self.to_named(*function);
+                let mut named_arguments = Vec::with_capacity(arguments.len());
+                for &argument in arguments {
+                    let named_argument = self.to_named(argument);
+                    named_arguments.push(named_argument);
+                }
                 self.destination
                     .application(named_function, named_arguments)
             }
         }
     }
-}
 
-pub fn to_named<G: FreshVariableNameGenerator>(
-    strings: &mut StringArena,
-    expressions: &ExpressionArena,
-    expression: ExpressionId,
-    destination: &mut ExpressionArena,
-    variable_name_generator: G,
-) -> ExpressionId {
-    let store = StoreBuilder::new(expressions).build_store(expression);
-    NameGeneration::new(
-        strings,
-        expressions,
-        destination,
-        store,
-        variable_name_generator,
-    )
-    .convert_to_named(expression)
+    pub fn convert_to_named(mut self, expression: ExpressionId) -> ExpressionId {
+        self.to_named(expression)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+
+    use std::rc::Rc;
 
     use rand::{thread_rng, Rng};
 
@@ -360,7 +522,7 @@ mod tests {
             ),
             &mut nameless_expressions,
         );
-        let named_expression = to_named(
+        let named_expression = Expression::to_named(
             &mut strings,
             &nameless_expressions,
             nameless_expression,
@@ -413,7 +575,7 @@ mod tests {
             (referencing_environment.clone(), &expressions, expression),
             &mut nameless_expressions,
         );
-        let named_expression = to_named(
+        let named_expression = Expression::to_named(
             &mut strings,
             &nameless_expressions,
             nameless_expression,
@@ -440,7 +602,7 @@ mod tests {
     fn fuzz_tests() {
         let mut rng = thread_rng();
         let max_depth = 7;
-        let test_count = 50;
+        let test_count = 400;
         for _ in 0..test_count {
             fuzz_test(&mut rng, max_depth);
         }

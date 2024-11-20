@@ -62,7 +62,7 @@ impl StringArena {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.strings.is_empty()
     }
 
     pub fn intern(&mut self, value: &[u8]) -> StringId {

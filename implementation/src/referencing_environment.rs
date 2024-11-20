@@ -90,6 +90,9 @@ impl ReferencingEnvironment {
         let stack = self.bindings_map.get_mut(&identifier).unwrap();
         debug_assert!(!stack.is_empty());
         stack.pop();
+        if stack.is_empty() {
+            self.bindings_map.remove(&identifier);
+        }
         self.unshift();
     }
 

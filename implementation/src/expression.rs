@@ -12,7 +12,7 @@ pub struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct ExpressionId {
     index: usize,
 }
@@ -115,7 +115,7 @@ impl ExpressionArena {
 
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.len() == 0
+        self.expressions.is_empty()
     }
 
     #[inline]
