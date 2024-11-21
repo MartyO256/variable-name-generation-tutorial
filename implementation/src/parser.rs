@@ -11,7 +11,7 @@ use nom::{
 };
 
 use crate::{
-    expression::{ExpressionArena, ExpressionId},
+    expression::{self, ExpressionArena, ExpressionId},
     strings::StringArena,
 };
 
@@ -264,30 +264,33 @@ fn lower(
     }
 }
 
-pub fn parse_expression<'a>(
-    strings: &mut StringArena,
-    expressions: &mut ExpressionArena,
-    input: &'a [u8],
-) -> Result<ExpressionId, nom::error::Error<&'a [u8]>> {
-    match terminated(delimited(multispace0, expression, multispace0), eof)(input).finish() {
-        Result::Ok((_input, parsed)) => {
-            let lowered = lower(strings, expressions, &parsed);
-            Result::Ok(lowered)
+impl expression::Expression {
+    pub fn parse_expression<'a>(
+        strings: &mut StringArena,
+        expressions: &mut ExpressionArena,
+        input: &'a [u8],
+    ) -> Result<ExpressionId, nom::error::Error<&'a [u8]>> {
+        match terminated(delimited(multispace0, expression, multispace0), eof)(input).finish() {
+            Result::Ok((_input, parsed)) => {
+                let lowered = lower(strings, expressions, &parsed);
+                Result::Ok(lowered)
+            }
+            Result::Err(error) => Result::Err(error),
         }
-        Result::Err(error) => Result::Err(error),
     }
-}
 
-pub fn parse_mixed_expression<'a>(
-    strings: &mut StringArena,
-    expressions: &mut ExpressionArena,
-    input: &'a [u8],
-) -> Result<ExpressionId, nom::error::Error<&'a [u8]>> {
-    match terminated(delimited(multispace0, mixed_expression, multispace0), eof)(input).finish() {
-        Result::Ok((_input, parsed)) => {
-            let lowered = lower(strings, expressions, &parsed);
-            Result::Ok(lowered)
+    pub fn parse_mixed_expression<'a>(
+        strings: &mut StringArena,
+        expressions: &mut ExpressionArena,
+        input: &'a [u8],
+    ) -> Result<ExpressionId, nom::error::Error<&'a [u8]>> {
+        match terminated(delimited(multispace0, mixed_expression, multispace0), eof)(input).finish()
+        {
+            Result::Ok((_input, parsed)) => {
+                let lowered = lower(strings, expressions, &parsed);
+                Result::Ok(lowered)
+            }
+            Result::Err(error) => Result::Err(error),
         }
-        Result::Err(error) => Result::Err(error),
     }
 }

@@ -255,20 +255,27 @@ impl<'a> ConstraintStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable { identifier } => {
-                if self.environment.is_free(*identifier) {
-                    for binder in self.environment.binders.iter() {
-                        match self.constraints.get_mut(*binder) {
-                            Option::Some(Constraint::NamelessAbstraction {
-                                parameter: _,
-                                restrictions,
-                                used: _,
-                            }) => {
-                                restrictions
-                                    .insert(ParameterRestriction::FreeVariable { id: *identifier });
-                            }
-                            Option::Some(Constraint::Abstraction { parameter: _ }) => {}
-                            _ => unreachable!(),
+                for binder in self.environment.binders.iter().rev() {
+                    match self.constraints.get_mut(*binder) {
+                        Option::Some(Constraint::NamelessAbstraction {
+                            parameter: _,
+                            restrictions,
+                            used: _,
+                        }) => {
+                            restrictions
+                                .insert(ParameterRestriction::FreeVariable { id: *identifier });
                         }
+                        Option::Some(Constraint::Abstraction {
+                            parameter: Option::Some(parameter),
+                        }) => {
+                            if *parameter == *identifier {
+                                break;
+                            }
+                        }
+                        Option::Some(Constraint::Abstraction {
+                            parameter: Option::None,
+                        }) => {}
+                        _ => unreachable!(),
                     }
                 }
             }
@@ -498,11 +505,63 @@ mod tests {
     use rand::{thread_rng, Rng};
 
     use crate::{
-        fresh_variable_name_generators::SuffixVariableNameGenerator, parser::parse_expression,
+        fresh_variable_name_generators::SuffixVariableNameGenerator,
         referencing_environment::ReferencingEnvironment,
     };
 
     use super::*;
+
+    fn test_alpha_equivalence_of_named_mixed_expression(input: &str) {
+        let mut strings = StringArena::new();
+        let mut source_expressions = ExpressionArena::new();
+        let mut named_expressions = ExpressionArena::new();
+        let variable_name_generator = SuffixVariableNameGenerator::new();
+        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+
+        let expression = Expression::parse_mixed_expression(
+            &mut strings,
+            &mut source_expressions,
+            input.as_bytes(),
+        )
+        .unwrap();
+        let named_expression = Expression::to_named(
+            &mut strings,
+            &source_expressions,
+            expression,
+            &mut named_expressions,
+            variable_name_generator,
+        );
+        assert!(Expression::is_named(&named_expressions, named_expression));
+
+        assert!(Expression::alpha_equivalent(
+            (
+                referencing_environment.clone(),
+                &source_expressions,
+                expression
+            ),
+            (
+                referencing_environment.clone(),
+                &named_expressions,
+                named_expression
+            )
+        ));
+    }
+
+    #[test]
+    fn test_alpha_equivalence_of_named_mixed_expressions() {
+        test_alpha_equivalence_of_named_mixed_expression("λ. x");
+        test_alpha_equivalence_of_named_mixed_expression("λy. x");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λy. x");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λy. y");
+        test_alpha_equivalence_of_named_mixed_expression("λf. λx. λy. f x");
+        test_alpha_equivalence_of_named_mixed_expression("λ. λx. λy. 3 x y");
+        test_alpha_equivalence_of_named_mixed_expression("λf. λ. λy. f 2 y");
+        test_alpha_equivalence_of_named_mixed_expression("λf. λx. λ. f x 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λ. f x");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λ. x x1 x2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λ. x 1");
+        test_alpha_equivalence_of_named_mixed_expression("λ. λx. λ. 3 x 1");
+    }
 
     fn roundtrip_test(input: &str) {
         let mut strings = StringArena::new();
@@ -513,7 +572,8 @@ mod tests {
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
         let expression =
-            parse_expression(&mut strings, &mut source_expressions, input.as_bytes()).unwrap();
+            Expression::parse_expression(&mut strings, &mut source_expressions, input.as_bytes())
+                .unwrap();
         let nameless_expression = Expression::to_locally_nameless(
             (
                 referencing_environment.clone(),
@@ -562,10 +622,6 @@ mod tests {
 
         let expression =
             Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
-        eprintln!(
-            "{}",
-            Expression::to_string(&strings, &expressions, 80, expression).unwrap()
-        );
         let mut nameless_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
         let variable_name_generator = SuffixVariableNameGenerator::new();
@@ -581,10 +637,6 @@ mod tests {
             nameless_expression,
             &mut named_expressions,
             variable_name_generator,
-        );
-        eprintln!(
-            "{}",
-            Expression::to_string(&strings, &named_expressions, 80, named_expression).unwrap()
         );
         assert!(Expression::is_named(&named_expressions, named_expression));
 

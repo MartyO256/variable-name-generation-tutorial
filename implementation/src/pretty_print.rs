@@ -172,10 +172,7 @@ mod tests {
 
     use rand::{thread_rng, Rng};
 
-    use crate::{
-        parser::{parse_expression, parse_mixed_expression},
-        referencing_environment::ReferencingEnvironment,
-    };
+    use crate::referencing_environment::ReferencingEnvironment;
 
     use super::*;
 
@@ -184,12 +181,13 @@ mod tests {
         let mut expressions = ExpressionArena::new();
 
         let parsed_expression =
-            parse_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
+            Expression::parse_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
 
         let printed = Expression::to_string(&strings, &expressions, 80, parsed_expression).unwrap();
 
         let reparsed_expression =
-            parse_expression(&mut strings, &mut expressions, printed.as_bytes()).unwrap();
+            Expression::parse_expression(&mut strings, &mut expressions, printed.as_bytes())
+                .unwrap();
 
         assert!(Expression::equals(
             (&expressions, parsed_expression),
@@ -215,13 +213,11 @@ mod tests {
         let expression =
             Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
 
-        eprintln!("{:#?}", expressions);
-        eprintln!("{:#?}", expression);
         let input = Expression::to_string(&strings, &expressions, 80, expression).unwrap();
-        eprintln!("{}", input);
 
         let parsed_expression =
-            parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes())
+                .unwrap();
 
         assert!(Expression::equals(
             (&expressions, expression),

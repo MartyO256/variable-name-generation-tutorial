@@ -85,11 +85,7 @@ mod tests {
 
     use rand::{thread_rng, Rng};
 
-    use crate::{
-        parser::{parse_expression, parse_mixed_expression},
-        referencing_environment::ReferencingEnvironment,
-        strings::StringArena,
-    };
+    use crate::{referencing_environment::ReferencingEnvironment, strings::StringArena};
 
     use super::*;
 
@@ -100,11 +96,15 @@ mod tests {
         let environment = Rc::new(ReferencingEnvironment::new());
 
         let expression =
-            parse_expression(&mut strings, &mut parsed_expressions, input.as_bytes()).unwrap();
-
-        let expected_expression =
-            parse_mixed_expression(&mut strings, &mut parsed_expressions, expected.as_bytes())
+            Expression::parse_expression(&mut strings, &mut parsed_expressions, input.as_bytes())
                 .unwrap();
+
+        let expected_expression = Expression::parse_mixed_expression(
+            &mut strings,
+            &mut parsed_expressions,
+            expected.as_bytes(),
+        )
+        .unwrap();
         assert!(Expression::is_locally_nameless(
             &parsed_expressions,
             expected_expression
@@ -157,10 +157,6 @@ mod tests {
 
         let expression =
             Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
-        eprintln!(
-            "{}",
-            Expression::to_string(&strings, &expressions, 80, expression).unwrap()
-        );
         let environment = Rc::new(ReferencingEnvironment::new());
 
         let mut converted_expressions = ExpressionArena::new();

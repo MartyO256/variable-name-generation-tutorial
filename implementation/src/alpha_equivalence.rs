@@ -169,10 +169,7 @@ impl<'a> AlphaEquivalence<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        parser::parse_mixed_expression, referencing_environment::ReferencingEnvironment,
-        strings::StringArena,
-    };
+    use crate::{referencing_environment::ReferencingEnvironment, strings::StringArena};
 
     use super::*;
 
@@ -182,9 +179,11 @@ mod tests {
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
         let expression1 =
-            parse_mixed_expression(&mut strings, &mut expressions, input1.as_bytes()).unwrap();
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input1.as_bytes())
+                .unwrap();
         let expression2 =
-            parse_mixed_expression(&mut strings, &mut expressions, input2.as_bytes()).unwrap();
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input2.as_bytes())
+                .unwrap();
 
         assert_eq!(
             Expression::alpha_equivalent(

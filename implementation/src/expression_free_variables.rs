@@ -74,10 +74,7 @@ impl<'a> FreeVariables<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        parser::parse_mixed_expression, referencing_environment::ReferencingEnvironment,
-        strings::StringArena,
-    };
+    use crate::{referencing_environment::ReferencingEnvironment, strings::StringArena};
 
     use super::*;
 
@@ -92,7 +89,8 @@ mod tests {
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
         let expression =
-            parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes())
+                .unwrap();
 
         let free_variables =
             Expression::free_variables(referencing_environment, &expressions, expression);

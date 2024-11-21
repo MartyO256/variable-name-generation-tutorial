@@ -43,7 +43,7 @@ impl<'a> ExpressionSize<'a> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{parser::parse_mixed_expression, strings::StringArena};
+    use crate::strings::StringArena;
 
     use super::*;
 
@@ -52,7 +52,8 @@ mod tests {
         let mut expressions = ExpressionArena::new();
 
         let expression =
-            parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes()).unwrap();
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input.as_bytes())
+                .unwrap();
 
         let size = Expression::size(&expressions, expression);
 
