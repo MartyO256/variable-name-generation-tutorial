@@ -6,7 +6,7 @@ use crate::{
 };
 
 impl Expression {
-    pub fn to_locally_nameless(
+    pub fn convert_to_locally_nameless(
         (environment, arena, expression): (
             Rc<ReferencingEnvironment>,
             &ExpressionArena,
@@ -110,7 +110,7 @@ mod tests {
             expected_expression
         ));
 
-        let nameless_expression = Expression::to_locally_nameless(
+        let nameless_expression = Expression::convert_to_locally_nameless(
             (environment.clone(), &parsed_expressions, expression),
             &mut converted_expressions,
         );
@@ -161,7 +161,7 @@ mod tests {
 
         let mut converted_expressions = ExpressionArena::new();
 
-        let nameless_expression = Expression::to_locally_nameless(
+        let nameless_expression = Expression::convert_to_locally_nameless(
             (environment.clone(), &expressions, expression),
             &mut converted_expressions,
         );

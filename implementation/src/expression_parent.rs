@@ -22,26 +22,31 @@ impl<'a> Parent<'a> {
         }
     }
 
+    #[inline]
+    fn set_parent(&mut self, expression: ExpressionId, parent: ExpressionId) {
+        self.parent[expression.into_usize()] = Option::Some(parent);
+    }
+
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable { identifier: _ } => {}
             Expression::NamelessVariable { index: _ } => {}
             Expression::Abstraction { parameter: _, body } => {
-                self.parent[body.into_usize()] = Option::Some(expression.clone());
+                self.set_parent(*body, expression);
                 self.visit(*body);
             }
             Expression::NamelessAbstraction { body } => {
-                self.parent[body.into_usize()] = Option::Some(expression.clone());
+                self.set_parent(*body, expression);
                 self.visit(*body);
             }
             Expression::Application {
                 function,
                 arguments,
             } => {
-                self.parent[function.into_usize()] = Option::Some(expression.clone());
+                self.set_parent(*function, expression);
                 self.visit(*function);
                 for &argument in arguments {
-                    self.parent[argument.into_usize()] = Option::Some(expression.clone());
+                    self.set_parent(argument, expression);
                     self.visit(argument);
                 }
             }

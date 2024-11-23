@@ -9,7 +9,6 @@ use std::{
     sync::mpsc,
     thread,
     time::Duration,
-    usize,
 };
 
 use expression::{Expression, ExpressionArena, ExpressionId};
@@ -64,8 +63,8 @@ fn sample_expression<R: Rng>(
     max_depth: usize,
 ) -> SampledExpression {
     let expression = Expression::sample(strings, expressions, environment.clone(), rng, max_depth);
-    let size = Expression::size(&expressions, expression);
-    let height = Expression::height(&expressions, expression);
+    let size = Expression::size(expressions, expression);
+    let height = Expression::height(expressions, expression);
     SampledExpression::new(expression, size, height)
 }
 
@@ -73,7 +72,7 @@ fn is_different(
     expressions: &ExpressionArena,
     environment: Rc<ReferencingEnvironment>,
     sampled_expression: &SampledExpression,
-    selected_expressions: &Vec<SampledExpression>,
+    selected_expressions: &[SampledExpression],
 ) -> bool {
     for selected_expression in selected_expressions.iter() {
         if sampled_expression.size == selected_expression.size
@@ -81,12 +80,12 @@ fn is_different(
             && Expression::alpha_equivalent(
                 (
                     environment.clone(),
-                    &expressions,
+                    expressions,
                     sampled_expression.expression,
                 ),
                 (
                     environment.clone(),
-                    &expressions,
+                    expressions,
                     selected_expression.expression,
                 ),
             )
@@ -166,7 +165,7 @@ fn main() {
     }
 
     let output_path = Path::new("expressions.list");
-    let output_file = File::create(&output_path).unwrap();
+    let output_file = File::create(output_path).unwrap();
     let mut output_file = LineWriter::new(output_file);
 
     while let Result::Ok(sampled_expression) = rx.recv() {

@@ -111,7 +111,7 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
     fn sample_named_lambda_expression(&mut self, max_depth: usize) -> ExpressionId {
         debug_assert!(max_depth > 0);
         let parameter = {
-            if self.rng.gen_bool(0.1) {
+            if self.rng.gen_bool(0.2) {
                 Option::None
             } else {
                 let identifier = self.sample_identifier();
@@ -184,7 +184,6 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
     }
 
     pub fn sample(mut self, max_depth: usize) -> ExpressionId {
-        let expression = self.sample_expression(max_depth);
-        expression
+        self.sample_expression(max_depth)
     }
 }
