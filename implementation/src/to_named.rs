@@ -18,14 +18,14 @@ impl Expression {
         destination: &mut ExpressionArena,
         variable_name_generator: G,
     ) -> ExpressionId {
-        let mut variables = VariableNameArena::new();
+        let mut identifiers = IdentifierArena::new();
         let constraints =
-            ConstraintStoreBuilder::new(expressions, &mut variables).build(expression);
+            ConstraintStoreBuilder::new(expressions, &mut identifiers).build(expression);
         NameGeneration::new(
             strings,
             expressions,
             destination,
-            variables,
+            identifiers,
             constraints,
             variable_name_generator,
         )
@@ -34,14 +34,14 @@ impl Expression {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-struct VariableNameId {
+struct IdentifierId {
     index: usize,
 }
 
-impl VariableNameId {
+impl IdentifierId {
     #[inline]
-    pub fn new(index: usize) -> VariableNameId {
-        VariableNameId { index }
+    pub fn new(index: usize) -> IdentifierId {
+        IdentifierId { index }
     }
 
     #[inline]
@@ -50,50 +50,49 @@ impl VariableNameId {
     }
 }
 
-struct VariableNameArena {
+struct IdentifierArena {
     names: Vec<Option<StringId>>,
 }
 
-impl VariableNameArena {
-    pub fn new() -> VariableNameArena {
-        VariableNameArena { names: Vec::new() }
+impl IdentifierArena {
+    pub fn new() -> IdentifierArena {
+        IdentifierArena { names: Vec::new() }
     }
 
     pub fn len(&self) -> usize {
         self.names.len()
     }
 
-    pub fn has(&self, id: VariableNameId) -> bool {
+    pub fn has(&self, id: IdentifierId) -> bool {
         id.into_usize() < self.len()
     }
 
-    pub fn variable_name(&mut self) -> VariableNameId {
+    pub fn new_identifier(&mut self) -> IdentifierId {
         let index = self.len();
         self.names.push(Option::None);
-        VariableNameId::new(index)
+        IdentifierId::new(index)
     }
 
-    pub fn lookup(&self, id: VariableNameId) -> Option<StringId> {
+    pub fn lookup(&self, id: IdentifierId) -> Option<StringId> {
         debug_assert!(self.has(id));
         self.names[id.into_usize()]
     }
 
-    pub fn set(&mut self, id: VariableNameId, name: StringId) {
+    pub fn set(&mut self, id: IdentifierId, name: StringId) {
         debug_assert!(self.has(id));
         let previous = self.names[id.into_usize()].replace(name);
         debug_assert!(previous.is_none());
     }
 }
 
-#[derive(Clone)]
 struct Constraint {
-    parameter: VariableNameId,
-    restrictions: HashSet<VariableNameId>,
+    parameter: IdentifierId,
+    restrictions: HashSet<IdentifierId>,
     used: bool,
 }
 
 impl Constraint {
-    pub fn new(parameter: VariableNameId) -> Constraint {
+    pub fn new(parameter: IdentifierId) -> Constraint {
         Constraint {
             parameter,
             restrictions: HashSet::new(),
@@ -127,7 +126,7 @@ impl ConstraintStore {
 }
 
 pub struct ReferencingEnvironment {
-    bindings_map: HashMap<StringId, Vec<VariableNameId>>,
+    bindings_map: HashMap<StringId, Vec<IdentifierId>>,
     binders: Vec<ExpressionId>,
     size: usize,
 }
@@ -152,11 +151,11 @@ impl ReferencingEnvironment {
         self.len() == 0
     }
 
-    fn bind(&mut self, identifier: StringId, variable: VariableNameId, binder: ExpressionId) {
-        if let Option::Some(stack) = self.bindings_map.get_mut(&identifier) {
-            stack.push(variable);
+    fn bind(&mut self, name: StringId, identifier: IdentifierId, binder: ExpressionId) {
+        if let Option::Some(stack) = self.bindings_map.get_mut(&name) {
+            stack.push(identifier);
         } else {
-            self.bindings_map.insert(identifier, vec![variable]);
+            self.bindings_map.insert(name, vec![identifier]);
         }
         self.binders.push(binder);
         self.size += 1;
@@ -187,7 +186,7 @@ impl ReferencingEnvironment {
         self.size -= 1;
     }
 
-    fn lookup(&self, identifier: StringId) -> Option<VariableNameId> {
+    fn lookup(&self, identifier: StringId) -> Option<IdentifierId> {
         self.bindings_map
             .get(&identifier)
             .and_then(|stack| stack.last().copied())
@@ -212,7 +211,7 @@ impl Default for ReferencingEnvironment {
 
 struct ConstraintStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
-    variables: &'a mut VariableNameArena,
+    identifiers: &'a mut IdentifierArena,
     constraints: ConstraintStore,
     environment: ReferencingEnvironment,
 }
@@ -220,11 +219,11 @@ struct ConstraintStoreBuilder<'a> {
 impl<'a> ConstraintStoreBuilder<'a> {
     pub fn new(
         expressions: &'a ExpressionArena,
-        variables: &'a mut VariableNameArena,
+        identifiers: &'a mut IdentifierArena,
     ) -> ConstraintStoreBuilder<'a> {
         ConstraintStoreBuilder {
             expressions,
-            variables,
+            identifiers,
             constraints: ConstraintStore::new(),
             environment: ReferencingEnvironment::new(),
         }
@@ -232,33 +231,36 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
-            Expression::Variable { identifier } => {
-                let variable = if let Option::Some(variable) = self.environment.lookup(*identifier)
-                {
-                    variable
-                } else {
-                    let variable = self.variables.variable_name();
-                    self.variables.set(variable, *identifier);
-                    variable
-                };
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                let identifier =
+                    if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                        // `expression` is a bound variable
+                        identifier
+                    } else {
+                        // `expression` is a free variable
+                        let identifier = self.identifiers.new_identifier();
+                        self.identifiers.set(identifier, *variable);
+                        identifier
+                    };
                 for binder in self.environment.binders_iter() {
                     let Constraint {
                         parameter,
                         restrictions,
                         used,
                     } = self.constraints.get_mut(*binder).unwrap();
-                    if let Option::Some(parameter) = self.variables.lookup(*parameter) {
-                        if parameter == *identifier {
-                            *used = true;
-                            break;
-                        }
+                    if *parameter == identifier {
+                        // Found the binder for bound variable `expression`
+                        *used = true;
+                        break;
                     }
-                    restrictions.insert(variable);
+                    restrictions.insert(identifier);
                 }
             }
             Expression::NamelessVariable { index } => {
                 let binder = self.environment.lookup_binder(*index);
-                let variable = {
+                let identifier = {
                     let Constraint {
                         parameter,
                         restrictions: _,
@@ -266,16 +268,23 @@ impl<'a> ConstraintStoreBuilder<'a> {
                     } = self.constraints.get(binder).unwrap();
                     *parameter
                 };
+
+                // Constraints to add to the binder for `expression`
                 let mut additional_restrictions = Vec::new();
-                for binder in self.environment.binders_iter().take(index.into_usize() - 1) {
+                for sub_binder in self.environment.binders_iter().take(index.into_usize() - 1) {
                     let Constraint {
                         parameter,
                         restrictions,
                         used: _,
-                    } = self.constraints.get_mut(*binder).unwrap();
-                    restrictions.insert(variable);
+                    } = self.constraints.get_mut(*sub_binder).unwrap();
+
+                    // `sub_binder` can't use the same parameter as `binder`
+                    restrictions.insert(identifier);
+
+                    // `binder` can't use the same parameter as `sub_binder`
                     additional_restrictions.push(*parameter);
                 }
+
                 let Constraint {
                     parameter: _,
                     restrictions,
@@ -287,15 +296,17 @@ impl<'a> ConstraintStoreBuilder<'a> {
                 }
             }
             Expression::Abstraction { parameter, body } => {
-                let variable = self.variables.variable_name();
+                let parameter_identifier = self.identifiers.new_identifier();
                 if let Option::Some(name) = parameter {
-                    self.variables.set(variable, *name);
+                    // Use already defined parameter name
+                    self.identifiers.set(parameter_identifier, *name);
                 }
-                let constraint = Constraint::new(variable);
+                let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
                     Option::Some(parameter) => {
-                        self.environment.bind(*parameter, variable, expression);
+                        self.environment
+                            .bind(*parameter, parameter_identifier, expression);
                         self.visit(*body);
                         self.environment.unbind(*parameter);
                     }
@@ -307,8 +318,8 @@ impl<'a> ConstraintStoreBuilder<'a> {
                 }
             }
             Expression::NamelessAbstraction { body } => {
-                let variable = self.variables.variable_name();
-                let constraint = Constraint::new(variable);
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 self.environment.shift(expression);
                 self.visit(*body);
@@ -336,7 +347,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     strings: &'a mut StringArena,
     provider: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
-    variables: VariableNameArena,
+    identifiers: IdentifierArena,
     constraints: ConstraintStore,
     binders: Vec<ExpressionId>,
     variable_name_generator: G,
@@ -347,7 +358,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         strings: &'a mut StringArena,
         provider: &'a ExpressionArena,
         destination: &'a mut ExpressionArena,
-        variables: VariableNameArena,
+        identifiers: IdentifierArena,
         constraints: ConstraintStore,
         variable_name_generator: G,
     ) -> NameGeneration<'a, G> {
@@ -355,50 +366,60 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
             strings,
             provider,
             destination,
-            variables,
+            identifiers,
             constraints,
             binders: Vec::new(),
             variable_name_generator,
         }
     }
 
-    fn lookup_restriction_set(&self, restrictions: &HashSet<VariableNameId>) -> HashSet<StringId> {
+    fn lookup_restriction_set(&self, restrictions: &HashSet<IdentifierId>) -> HashSet<StringId> {
         let mut identifiers = HashSet::new();
         for restriction in restrictions {
-            if let Option::Some(identifier) = self.variables.lookup(*restriction) {
+            if let Option::Some(identifier) = self.identifiers.lookup(*restriction) {
                 identifiers.insert(identifier);
             }
         }
         identifiers
     }
 
-    fn assign(&mut self, id: VariableNameId, name: StringId) {
-        self.variables.set(id, name);
+    fn lookup_binder(&self, index: &DeBruijnIndex) -> ExpressionId {
+        self.binders[self.binders.len() - index.into_usize()]
+    }
+
+    fn assign(&mut self, id: IdentifierId, name: StringId) {
+        self.identifiers.set(id, name);
     }
 
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.provider[expression] {
             Expression::Variable { identifier } => self.destination.variable(*identifier),
             Expression::NamelessVariable { index } => {
-                let binder = self.binders[self.binders.len() - index.into_usize()];
+                let binder = self.lookup_binder(index);
                 let Constraint {
                     parameter,
                     restrictions: _,
                     used: _,
                 } = self.constraints.get(binder).unwrap();
-                let identifier = self.variables.lookup(*parameter).unwrap();
+                let identifier = self.identifiers.lookup(*parameter).unwrap();
                 self.destination.variable(identifier)
             }
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction {
+                parameter: initial_parameter,
+                body,
+            } => {
                 let Constraint {
                     parameter,
                     restrictions,
                     used,
                 } = self.constraints.get(expression).unwrap();
                 let parameter =
-                    if let parameter @ Option::Some(_) = self.variables.lookup(*parameter) {
+                    if let parameter @ Option::Some(_) = self.identifiers.lookup(*parameter) {
+                        // A parameter name already existed for `expression`
+                        debug_assert!(initial_parameter.is_some());
                         parameter
                     } else if *used {
+                        // The parameter for `expression` is used in `body`
                         let claimed_identifiers = self.lookup_restriction_set(restrictions);
                         let name = self
                             .variable_name_generator
@@ -406,6 +427,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                         self.assign(*parameter, name);
                         Option::Some(name)
                     } else {
+                        // The parameter for `expression` is never used in `body`
                         Option::None
                     };
                 self.binders.push(expression);
@@ -420,6 +442,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     used,
                 } = self.constraints.get(expression).unwrap();
                 let parameter = if *used {
+                    // The parameter for `expression` is used in `body`
                     let claimed_identifiers = self.lookup_restriction_set(restrictions);
                     let name = self
                         .variable_name_generator
@@ -427,6 +450,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     self.assign(*parameter, name);
                     Option::Some(name)
                 } else {
+                    // The parameter for `expression` is never used in `body`
                     Option::None
                 };
                 self.binders.push(expression);
