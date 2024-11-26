@@ -15,9 +15,9 @@ export default makeScene2D(function* (view) {
     <Latex
       ref={grammar}
       tex={[
-        "\\text{Terms}\\ ",
+        "\\text{Expressions}\\ ",
         "M, N",
-        "::=",
+        "\\Coloneqq{}",
         "x",
         "\\mid",
         "{\\lambda x. M}",
@@ -35,9 +35,9 @@ export default makeScene2D(function* (view) {
 
   yield* grammar().tex(
     [
-      "\\text{Terms}\\ ",
+      "\\text{Expressions}\\ ",
       "M, N",
-      "::=",
+      "\\Coloneqq{}",
       "x",
       "\\mid",
       "{\\lambda x. M}",
