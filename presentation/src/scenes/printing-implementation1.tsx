@@ -28,8 +28,7 @@ fn expression1<'a>(
     match &pool[expression] {
 
     }
-}
-`}
+}`}
     />
   );
 
@@ -49,8 +48,7 @@ fn expression1<'a>(
             
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -72,8 +70,7 @@ fn expression1<'a>(
             let body_doc = expression1(strings, pool, *body)?;
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -102,8 +99,7 @@ fn expression1<'a>(
             )
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -133,8 +129,7 @@ fn expression1<'a>(
         }
         _ => expression2(strings, pool, expression),
     }
-}
-`,
+}`,
     1
   );
 

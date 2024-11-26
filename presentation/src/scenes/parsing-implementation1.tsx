@@ -24,8 +24,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
     fn lambda_expression(input: &[u8]) -> IResult<&[u8], Expression> {
 
     }
-}
-`}
+}`}
     />
   );
 
@@ -39,8 +38,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
     fn lambda_expression(input: &[u8]) -> IResult<&[u8], Expression> {
         let (input, _) = terminated(lambda, multispace0)(input)?;
     }
-}
-`,
+}`,
     1
   );
 
@@ -56,8 +54,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
             multispace0,
         )(input)?;
     }
-}
-`,
+}`,
     1
   );
 
@@ -74,8 +71,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
         )(input)?;
         let (input, _) = terminated(dot, multispace0)(input)?;
     }
-}
-`,
+}`,
     1
   );
 
@@ -100,8 +96,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
             },
         ))
     }
-}
-`,
+}`,
     1
   );
 
@@ -128,8 +123,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
     }
 
     alt((lambda_expression, expression2))(input)
-}
-`,
+}`,
     1
   );
 
@@ -159,8 +153,7 @@ fn expression1(input: &[u8]) -> IResult<&[u8], Expression> {
     }
 
     alt((lambda_expression, expression2))(input)
-}
-`,
+}`,
     1
   );
 

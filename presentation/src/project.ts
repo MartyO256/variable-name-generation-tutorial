@@ -2,6 +2,7 @@ import { makeProject } from "@motion-canvas/core";
 
 import title from "./scenes/title?scene";
 import motivation from "./scenes/motivation?scene";
+import problem from "./scenes/problem?scene";
 import grammar from "./scenes/grammar?scene";
 import parsing from "./scenes/parsing?scene";
 import parsingImplementation1 from "./scenes/parsing-implementation1?scene";
@@ -19,6 +20,7 @@ export default makeProject({
   scenes: [
     title,
     motivation,
+    problem,
     grammar,
     parsing,
     parsingImplementation1,

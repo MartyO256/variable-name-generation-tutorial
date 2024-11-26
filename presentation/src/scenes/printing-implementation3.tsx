@@ -28,8 +28,7 @@ fn expression3<'a>(
     match &pool[expression] {
         
     }
-}
-`}
+}`}
     />
   );
 
@@ -47,8 +46,7 @@ fn expression3<'a>(
     match &pool[expression] {
         Expression::Variable { identifier } => name(strings, *identifier)
     }
-}
-`,
+}`,
     1
   );
 
@@ -67,8 +65,7 @@ fn expression3<'a>(
             let expression_doc = expression1(strings, pool, expression)?;
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -97,8 +94,7 @@ fn expression3<'a>(
             )
         }
     }
-}
-`,
+}`,
     1
   );
 

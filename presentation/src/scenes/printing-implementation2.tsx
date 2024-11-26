@@ -28,8 +28,7 @@ fn expression2<'a>(
     match &pool[expression] {
         
     }
-}
-`}
+}`}
     />
   );
 
@@ -49,8 +48,7 @@ fn expression2<'a>(
             let function_doc = expression3(strings, pool, *function)?;
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -73,8 +71,7 @@ fn expression2<'a>(
             }
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -104,8 +101,7 @@ fn expression2<'a>(
             )
         }
     }
-}
-`,
+}`,
     1
   );
 
@@ -136,8 +132,7 @@ fn expression2<'a>(
         }
         _ => expression3(strings, pool, expression),
     }
-}
-`,
+}`,
     1
   );
 

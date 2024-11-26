@@ -28,8 +28,7 @@ fn expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     fn parenthesized_expression(input: &[u8]) -> IResult<&[u8], Expression> {
         
     }
-}
-`}
+}`}
     />
   );
 
@@ -49,8 +48,7 @@ fn expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     fn parenthesized_expression(input: &[u8]) -> IResult<&[u8], Expression> {
         
     }
-}
-`,
+}`,
     1
   );
 
@@ -72,8 +70,7 @@ fn expression3(input: &[u8]) -> IResult<&[u8], Expression> {
             right_parenthesis,
         )(input)
     }
-}
-`,
+}`,
     1
   );
 
@@ -97,8 +94,7 @@ fn expression3(input: &[u8]) -> IResult<&[u8], Expression> {
     }
 
     alt((variable_expression, parenthesized_expression))(input)
-}
-`,
+}`,
     1
   );
 

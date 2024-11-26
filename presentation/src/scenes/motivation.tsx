@@ -18,11 +18,12 @@ export default makeScene2D(function* (view) {
         Motivation
       </Txt>
       <Txt fontFamily={"Roboto"} fill={"white"} textWrap={true}>
-        Variable name generation occurs whenever synthesized terms have to be
-        pretty-printed:
+        Variable name generation occurs whenever synthesized expressions with
+        name binders have to be pretty-printed:
       </Txt>
       <Txt fontFamily={"Roboto"} fill={"white"}>
-        • After code snippet generation for splicing to the editor's buffer
+        • After generating a code snippet that needs to be splicing in source
+        code
       </Txt>
       <Txt fontFamily={"Roboto"} fill={"white"}>
         • After type inference for error-reporting

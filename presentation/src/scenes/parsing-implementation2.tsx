@@ -22,8 +22,7 @@ export default makeScene2D(function* (view) {
       code={`\
 fn expression2(input: &[u8]) -> IResult<&[u8], Expression> {
     
-}
-`}
+}`}
     />
   );
 
@@ -36,8 +35,7 @@ fn expression2(input: &[u8]) -> IResult<&[u8], Expression> {
 fn expression2(input: &[u8]) -> IResult<&[u8], Expression> {
     let (input, mut terms) = separated_list1(multispace1, expression3)(input)?;
     
-}
-`,
+}`,
     1
   );
 
@@ -52,8 +50,7 @@ fn expression2(input: &[u8]) -> IResult<&[u8], Expression> {
     } else {
         
     }
-}
-`,
+}`,
     1
   );
 
@@ -68,8 +65,7 @@ fn expression2(input: &[u8]) -> IResult<&[u8], Expression> {
     } else {
         
     }
-}
-`,
+}`,
     1
   );
 
@@ -91,8 +87,7 @@ fn expression2(input: &[u8]) -> IResult<&[u8], Expression> {
             },
         ))
     }
-}
-`,
+}`,
     1
   );
 
