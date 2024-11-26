@@ -487,7 +487,7 @@ mod tests {
     use rand::{thread_rng, Rng};
 
     use crate::{
-        fresh_variable_name_generators::SuffixVariableNameGenerator,
+        fresh_variable_name_generators::VariableNameGenerator,
         referencing_environment::ReferencingEnvironment,
     };
 
@@ -497,7 +497,7 @@ mod tests {
         let mut strings = StringArena::new();
         let mut source_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
-        let variable_name_generator = SuffixVariableNameGenerator::new();
+        let variable_name_generator = VariableNameGenerator::new();
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
         let expression = Expression::parse_mixed_expression(
@@ -553,7 +553,7 @@ mod tests {
         let mut source_expressions = ExpressionArena::new();
         let mut nameless_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
-        let variable_name_generator = SuffixVariableNameGenerator::new();
+        let variable_name_generator = VariableNameGenerator::new();
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
         let expression =
@@ -609,7 +609,7 @@ mod tests {
             Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
         let mut nameless_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
-        let variable_name_generator = SuffixVariableNameGenerator::new();
+        let variable_name_generator = VariableNameGenerator::new();
         let referencing_environment = Rc::new(ReferencingEnvironment::new());
 
         let nameless_expression = Expression::convert_to_locally_nameless(
