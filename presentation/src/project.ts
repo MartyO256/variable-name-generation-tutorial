@@ -5,6 +5,7 @@ import motivation from "./scenes/motivation?scene";
 import problem from "./scenes/problem?scene";
 import solution from "./scenes/solution?scene";
 import grammar from "./scenes/grammar?scene";
+import ast from "./scenes/ast?scene";
 import parsing from "./scenes/parsing?scene";
 import parsingImplementation1 from "./scenes/parsing-implementation1?scene";
 import parsingImplementation2 from "./scenes/parsing-implementation2?scene";
@@ -23,7 +24,7 @@ export default makeProject({
     problem,
     solution,
     grammar,
-    // TODO: Expression arena
+    ast,
     // TODO: Toy example with expression arena (parent expression)
     // Parsing and printing are useful tools for debugging and testing
     parsing,
