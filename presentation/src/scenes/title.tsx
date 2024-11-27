@@ -1,11 +1,7 @@
 import { makeScene2D, Txt } from "@motion-canvas/2d";
 import { all, beginSlide, createRef } from "@motion-canvas/core";
 
-import { backgroundFill } from "../constants";
-
 export default makeScene2D(function* (view) {
-  view.fill(backgroundFill);
-
   const title = createRef<Txt>();
   view.add(
     <Txt

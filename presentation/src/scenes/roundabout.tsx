@@ -1,17 +1,12 @@
-import { Latex, Layout, makeScene2D, Rect, Txt } from "@motion-canvas/2d";
+import { Latex, Layout, makeScene2D, Txt } from "@motion-canvas/2d";
 import {
   beginSlide,
   createRef,
   Direction,
   slideTransition,
 } from "@motion-canvas/core";
-import { backgroundFill } from "../constants";
 
 export default makeScene2D(function* (view) {
-  view.fontSize(50);
-  view.fontFamily("Roboto");
-  view.fill(backgroundFill);
-
   const envWf = createRef<Latex>();
   const termWf = createRef<Latex>();
   const indexing = createRef<Latex>();

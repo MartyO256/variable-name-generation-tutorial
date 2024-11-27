@@ -1,17 +1,12 @@
-import { Latex, Layout, makeScene2D, Node, Txt } from "@motion-canvas/2d";
+import { Latex, Layout, makeScene2D, Txt } from "@motion-canvas/2d";
 import {
-  all,
   beginSlide,
   createRef,
   Direction,
   slideTransition,
 } from "@motion-canvas/core";
 
-import { backgroundFill } from "../constants";
-
 export default makeScene2D(function* (view) {
-  view.fill(backgroundFill);
-
   const example1 = createRef<Latex>();
   const example2 = createRef<Latex>();
   const example3 = createRef<Latex>();

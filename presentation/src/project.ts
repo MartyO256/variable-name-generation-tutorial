@@ -12,7 +12,6 @@ import parsingImplementation3 from "./scenes/parsing-implementation3?scene";
 import printingImplementation1 from "./scenes/printing-implementation1?scene";
 import printingImplementation2 from "./scenes/printing-implementation2?scene";
 import printingImplementation3 from "./scenes/printing-implementation3?scene";
-import roundabout from "./scenes/roundabout?scene";
 
 import "./global.css";
 
@@ -38,6 +37,5 @@ export default makeProject({
     // TODO: To locally nameless
     // TODO: To named
     // TODO: Fuzz-testing
-    // roundabout, too restricted
   ],
 });

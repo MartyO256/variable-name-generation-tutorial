@@ -6,13 +6,10 @@ import {
   Direction,
   slideTransition,
 } from "@motion-canvas/core";
-import { backgroundFill } from "../constants";
 
 Code.defaultHighlighter = new LezerHighlighter(parser);
 
 export default makeScene2D(function* (view) {
-  view.fill(backgroundFill);
-
   const code = createRef<Code>();
 
   view.add(

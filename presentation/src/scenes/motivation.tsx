@@ -1,17 +1,7 @@
 import { Layout, makeScene2D, Txt } from "@motion-canvas/2d";
-import {
-  all,
-  beginSlide,
-  createRef,
-  Direction,
-  slideTransition,
-} from "@motion-canvas/core";
-
-import { backgroundFill } from "../constants";
+import { beginSlide, Direction, slideTransition } from "@motion-canvas/core";
 
 export default makeScene2D(function* (view) {
-  view.fill(backgroundFill);
-
   view.add(
     <Layout direction={"column"} gap={40} width={1920} padding={100} layout>
       <Txt fontFamily={"Roboto"} fill={"white"} fontSize={100}>

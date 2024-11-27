@@ -5,11 +5,8 @@ import {
   Direction,
   slideTransition,
 } from "@motion-canvas/core";
-import { backgroundFill } from "../constants";
 
 export default makeScene2D(function* (view) {
-  view.fill(backgroundFill);
-
   const grammar = createRef<Latex>();
   view.add(
     <Latex
