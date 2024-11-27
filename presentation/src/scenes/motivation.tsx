@@ -21,17 +21,17 @@ export default makeScene2D(function* (view) {
         Variable name generation occurs whenever synthesized expressions with
         name binders have to be pretty-printed:
       </Txt>
-      <Txt fontFamily={"Roboto"} fill={"white"}>
+      <Txt fontFamily={"Roboto"} fill={"white"} marginLeft={20}>
         • After generating a code snippet that needs to be splicing in source
         code
       </Txt>
-      <Txt fontFamily={"Roboto"} fill={"white"}>
+      <Txt fontFamily={"Roboto"} fill={"white"} marginLeft={20}>
         • After type inference for error-reporting
       </Txt>
-      <Txt fontFamily={"Roboto"} fill={"white"}>
+      <Txt fontFamily={"Roboto"} fill={"white"} marginLeft={20}>
         • After term reconstruction for implicit arguments
       </Txt>
-      <Txt fontFamily={"Roboto"} fill={"white"}>
+      <Txt fontFamily={"Roboto"} fill={"white"} marginLeft={20}>
         • After automated proof search for synthesized programs
       </Txt>
     </Layout>

@@ -22,41 +22,72 @@ export default makeScene2D(function* (view) {
       <Txt fontFamily={"Roboto"} fill={"white"} fontSize={100}>
         Problem Statement
       </Txt>
-      <Layout direction={"row"} gap={20}>
+      <Layout direction={"row"}>
         <Txt fontFamily={"Roboto"} fill={"white"}>
           Given an expression
         </Txt>
-        <Latex tex={["M"]} fill="white" fontSize={54} />
+        <Latex
+          tex={["M"]}
+          fill="white"
+          fontSize={54}
+          marginLeft={15}
+          marginRight={15}
+        />
         <Txt fontFamily={"Roboto"} fill={"white"}>
           with variables (free, bound by name, or bound by index)
         </Txt>
       </Layout>
-      <Layout direction={"row"} gap={20}>
+      <Layout direction={"row"}>
         <Txt fontFamily={"Roboto"} fill={"white"}>
           and binders (named or unnamed), generate an association
         </Txt>
-        <Latex tex={["C"]} fill="white" fontSize={54} />
+        <Latex
+          tex={["C"]}
+          fill="white"
+          fontSize={54}
+          marginLeft={15}
+          marginRight={15}
+        />
         <Txt fontFamily={"Roboto"} fill={"white"}>
           from binders to
         </Txt>
       </Layout>
-      <Layout direction={"row"} gap={20}>
+      <Layout direction={"row"}>
         <Txt fontFamily={"Roboto"} fill={"white"}>
           names such that applying
         </Txt>
-        <Latex tex={["C"]} fill="white" fontSize={54} />
+        <Latex
+          tex={["C"]}
+          fill="white"
+          fontSize={54}
+          marginLeft={15}
+          marginRight={15}
+        />
         <Txt fontFamily={"Roboto"} fill={"white"}>
           to
         </Txt>
-        <Latex tex={["M"]} fill="white" fontSize={54} />
+        <Latex
+          tex={["M"]}
+          fill="white"
+          fontSize={54}
+          marginLeft={15}
+          marginRight={15}
+        />
         <Txt fontFamily={"Roboto"} fill={"white"}>
           yields an alpha-equivalent expression.
         </Txt>
       </Layout>
-      <Layout direction={"column"} gap={40} alignItems={"center"} layout>
+      <Layout
+        direction={"column"}
+        gap={40}
+        alignItems={"center"}
+        height={400}
+        layout
+      >
         <Latex
           ref={example1}
           tex={[
+            "\\vphantom{f}",
             "\\lambda{}",
             ".",
             "\\ ",
@@ -79,7 +110,16 @@ export default makeScene2D(function* (view) {
         />
         <Latex
           ref={example2}
-          tex={["\\lambda{}", "f.\\ ", "\\lambda{}", ".", "\\ ", "f\\ ", "1"]}
+          tex={[
+            "\\vphantom{f}",
+            "\\lambda{}",
+            "f.\\ ",
+            "\\lambda{}",
+            ".",
+            "\\ ",
+            "f\\ ",
+            "1",
+          ]}
           fill="white"
           fontSize={54}
           opacity={0.1}
@@ -87,6 +127,7 @@ export default makeScene2D(function* (view) {
         <Latex
           ref={example3}
           tex={[
+            "\\vphantom{f}",
             "\\lambda{}",
             ".",
             "\\ ",
@@ -103,7 +144,15 @@ export default makeScene2D(function* (view) {
         />
         <Latex
           ref={example4}
-          tex={["\\lambda{}", ".\\ ", "\\lambda{}", ".", "\\ ", "1"]}
+          tex={[
+            "\\vphantom{f}",
+            "\\lambda{}",
+            ".\\ ",
+            "\\lambda{}",
+            ".",
+            "\\ ",
+            "1",
+          ]}
           fill="white"
           fontSize={54}
           opacity={0.1}
@@ -122,6 +171,7 @@ export default makeScene2D(function* (view) {
 
   yield* example1().tex(
     [
+      "\\vphantom{f}",
       "\\lambda{}",
       "x",
       ".",
@@ -151,7 +201,17 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("problem");
 
   yield* example2().tex(
-    ["\\lambda{}", "f.\\ ", "\\lambda{}", "x", ".", "\\ ", "f\\ ", "x"],
+    [
+      "\\vphantom{f}",
+      "\\lambda{}",
+      "f.\\ ",
+      "\\lambda{}",
+      "x",
+      ".",
+      "\\ ",
+      "f\\ ",
+      "x",
+    ],
     1
   );
 
@@ -163,6 +223,7 @@ export default makeScene2D(function* (view) {
 
   yield* example3().tex(
     [
+      "\\vphantom{f}",
       "\\lambda{}",
       "f",
       ".",
@@ -186,6 +247,7 @@ export default makeScene2D(function* (view) {
 
   yield* example4().tex(
     [
+      "\\vphantom{f}",
       "\\lambda{}",
       "\\textunderscore",
       ".\\ ",

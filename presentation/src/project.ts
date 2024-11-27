@@ -3,6 +3,7 @@ import { makeProject } from "@motion-canvas/core";
 import title from "./scenes/title?scene";
 import motivation from "./scenes/motivation?scene";
 import problem from "./scenes/problem?scene";
+import solution from "./scenes/solution?scene";
 import grammar from "./scenes/grammar?scene";
 import parsing from "./scenes/parsing?scene";
 import parsingImplementation1 from "./scenes/parsing-implementation1?scene";
@@ -21,7 +22,11 @@ export default makeProject({
     title,
     motivation,
     problem,
+    solution,
     grammar,
+    // TODO: Expression arena
+    // TODO: Toy example with expression arena (parent expression)
+    // Parsing and printing are useful tools for debugging and testing
     parsing,
     parsingImplementation1,
     parsingImplementation2,
@@ -29,6 +34,10 @@ export default makeProject({
     printingImplementation1,
     printingImplementation2,
     printingImplementation3,
-    roundabout,
+    // TODO: Alpha-equivalence
+    // TODO: To locally nameless
+    // TODO: To named
+    // TODO: Fuzz-testing
+    // roundabout, too restricted
   ],
 });
