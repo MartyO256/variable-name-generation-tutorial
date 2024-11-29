@@ -7,6 +7,7 @@ import solution from "./scenes/solution?scene";
 import solutionImplementation from "./scenes/solution-implementation?scene";
 import workedExample1 from "./scenes/worked-example1?scene";
 import workedExample2 from "./scenes/worked-example2?scene";
+import workedExample3 from "./scenes/worked-example3?scene";
 import grammar from "./scenes/grammar?scene";
 import ast from "./scenes/ast?scene";
 import parsing from "./scenes/parsing?scene";
@@ -29,6 +30,7 @@ export default makeProject({
     solutionImplementation,
     workedExample1,
     workedExample2,
+    workedExample3,
     grammar,
     ast,
     // TODO: To named

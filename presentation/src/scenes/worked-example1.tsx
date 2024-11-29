@@ -503,10 +503,11 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("worked-example");
 
   yield* all(
-    all(cursor1().opacity(0, 1), nameSequence().opacity(0, 1)),
-    binder1().opacity(0, 2),
-    binder2().opacity(0, 2),
-    binder3().opacity(0, 2)
+    cursor1().opacity(0, 1),
+    nameSequence().opacity(0, 1),
+    binder1().opacity(0, 1),
+    binder2().opacity(0, 1),
+    binder3().opacity(0, 1)
   );
 
   yield* beginSlide("worked-example");

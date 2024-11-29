@@ -24,6 +24,9 @@ export default makeScene2D(function* (view) {
   const vxLayout = createRef<Layout>();
   const vx = createRef<Latex>();
 
+  const vyLayout = createRef<Layout>();
+  const vy = createRef<Latex>();
+
   view.add(
     <Layout
       ref={layoutRef}
@@ -41,7 +44,7 @@ export default makeScene2D(function* (view) {
       >
         <Latex
           ref={lambda1}
-          tex={["\\vphantom{(}\\lambda{}", "f", "."]}
+          tex={["\\vphantom{(}\\lambda{}", "", "."]}
           fill="white"
           fontSize={70}
         />
@@ -67,7 +70,7 @@ export default makeScene2D(function* (view) {
         alignItems={"center"}
         alignContent={"center"}
       >
-        <Latex ref={vf} tex={"\\vphantom{(}f"} fill="white" fontSize={70} />
+        <Latex ref={vf} tex={"\\vphantom{(}2"} fill="white" fontSize={70} />
       </Layout>
       <Layout
         ref={vxLayout}
@@ -76,7 +79,16 @@ export default makeScene2D(function* (view) {
         alignItems={"center"}
         alignContent={"center"}
       >
-        <Latex ref={vx} tex={"\\vphantom{(}1"} fill="white" fontSize={70} />
+        <Latex ref={vx} tex={"\\vphantom{(}x"} fill="white" fontSize={70} />
+      </Layout>
+      <Layout
+        ref={vyLayout}
+        width={50}
+        height={50}
+        alignItems={"center"}
+        alignContent={"center"}
+      >
+        <Latex ref={vy} tex={"\\vphantom{(}1"} fill="white" fontSize={70} />
       </Layout>
     </Layout>
   );
@@ -167,10 +179,6 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* u1().tex(["f"], 1);
-
-  yield* beginSlide("worked-example");
-
   yield* cursor1X(unwrap<number>(lambda2Layout().x), 1);
 
   yield* beginSlide("worked-example");
@@ -230,7 +238,7 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* constraints2().tex(["\\{", "f", "\\}"], 1);
+  yield* constraints2().tex(["\\{", "u_1", "\\}"], 1);
 
   yield* beginSlide("worked-example");
 
@@ -245,6 +253,35 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("worked-example");
 
   yield* cursor1X(unwrap<number>(vxLayout().x), 1);
+
+  yield* beginSlide("worked-example");
+
+  yield* all(
+    cursor2X(unwrap<number>(cursor1X), 0),
+    cursor2Y(unwrap<number>(cursor1Y), 0),
+    cursor2().opacity(1, 1),
+    cursor2X(unwrap<number>(lambda2Layout().x), 1)
+  );
+
+  yield* beginSlide("worked-example");
+
+  yield* constraints2().tex(["\\{", "u_1", ",", "x", "\\}"], 1);
+
+  yield* beginSlide("worked-example");
+
+  yield* cursor2X(unwrap<number>(lambda1Layout().x), 1);
+
+  yield* beginSlide("worked-example");
+
+  yield* constraints1().tex(["\\{", "x", "\\}"], 1);
+
+  yield* beginSlide("worked-example");
+
+  yield* cursor2().opacity(0, 1);
+
+  yield* beginSlide("worked-example");
+
+  yield* cursor1X(unwrap<number>(vyLayout().x), 1);
 
   yield* beginSlide("worked-example");
 
@@ -273,11 +310,12 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  const nameSequence = createRef<Latex>();
+  const nameSequence1 = createRef<Latex>();
+  const nameSequence2 = createRef<Latex>();
 
   view.add(
     <Latex
-      ref={nameSequence}
+      ref={nameSequence1}
       tex={["(x, y, z, x_1, y_1, z_1, x_2, y_2, z_2, \\dots)"]}
       fill="white"
       fontSize={50}
@@ -286,7 +324,20 @@ export default makeScene2D(function* (view) {
     />
   );
 
-  yield* nameSequence().opacity(1, 1);
+  view.add(
+    <Latex
+      ref={nameSequence2}
+      tex={["(f, g, h, f_1, g_1, h_1, f_2, g_2, h_2, \\dots)"]}
+      fill="white"
+      fontSize={50}
+      y={-200}
+      opacity={0}
+    />
+  );
+
+  yield* nameSequence1().opacity(1, 1);
+
+  yield* nameSequence2().opacity(1, 1);
 
   yield* beginSlide("worked-example");
 
@@ -297,13 +348,21 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
+  yield* all(
+    u1().tex(["f"], 1),
+    lambda1().tex(["\\vphantom{(}\\lambda{}", "f", "."], 1),
+    constraints2().tex(["\\{", "f", ",", "x", "\\}"], 1)
+  );
+
+  yield* beginSlide("worked-example");
+
   yield* cursor1X(unwrap<number>(lambda2Layout().x), 1);
 
   yield* beginSlide("worked-example");
 
   yield* all(
-    u2().tex(["x"], 1),
-    lambda2().tex(["\\vphantom{(}\\lambda{}", "x", "."], 1)
+    u2().tex(["y"], 1),
+    lambda2().tex(["\\vphantom{(}\\lambda{}", "y", "."], 1)
   );
 
   yield* beginSlide("worked-example");
@@ -312,17 +371,26 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
+  yield* vf().tex(["\\vphantom{(}f"], 1);
+
+  yield* beginSlide("worked-example");
+
   yield* cursor1X(unwrap<number>(vxLayout().x), 1);
 
   yield* beginSlide("worked-example");
 
-  yield* vx().tex(["\\vphantom{(}x"], 1);
+  yield* cursor1X(unwrap<number>(vyLayout().x), 1);
+
+  yield* beginSlide("worked-example");
+
+  yield* vy().tex(["\\vphantom{(}y"], 1);
 
   yield* beginSlide("worked-example");
 
   yield* all(
     cursor1().opacity(0, 1),
-    nameSequence().opacity(0, 1),
+    nameSequence1().opacity(0, 1),
+    nameSequence2().opacity(0, 1),
     binder1().opacity(0, 1),
     binder2().opacity(0, 1)
   );
