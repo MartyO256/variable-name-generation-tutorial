@@ -5,7 +5,8 @@ import motivation from "./scenes/motivation?scene";
 import problem from "./scenes/problem?scene";
 import solution from "./scenes/solution?scene";
 import solutionImplementation from "./scenes/solution-implementation?scene";
-import workedExample from "./scenes/worked-example?scene";
+import workedExample1 from "./scenes/worked-example1?scene";
+import workedExample2 from "./scenes/worked-example2?scene";
 import grammar from "./scenes/grammar?scene";
 import ast from "./scenes/ast?scene";
 import parsing from "./scenes/parsing?scene";
@@ -26,9 +27,11 @@ export default makeProject({
     problem,
     solution,
     solutionImplementation,
-    workedExample,
+    workedExample1,
+    workedExample2,
     grammar,
     ast,
+    // TODO: To named
     parsing,
     parsingImplementation1,
     parsingImplementation2,
@@ -38,7 +41,6 @@ export default makeProject({
     printingImplementation3,
     // TODO: Alpha-equivalence
     // TODO: To locally nameless
-    // TODO: To named
     // TODO: Fuzz-testing
   ],
 });
