@@ -28,8 +28,7 @@ export default makeScene2D(function* (view) {
         marginLeft={20}
         opacity={0.1}
       >
-        • After generating a code snippet that needs to be splicing in source
-        code
+        • Generating code snippets as part of editor actions
       </Txt>
       <Txt
         ref={example2}
@@ -38,7 +37,7 @@ export default makeScene2D(function* (view) {
         marginLeft={20}
         opacity={0.1}
       >
-        • After type inference for error-reporting
+        • Error-reporting after type inference
       </Txt>
       <Txt
         ref={example3}
@@ -47,7 +46,7 @@ export default makeScene2D(function* (view) {
         marginLeft={20}
         opacity={0.1}
       >
-        • After term reconstruction for implicit arguments
+        • Displaying hints involving reconstructed implicit arguments
       </Txt>
       <Txt
         ref={example4}
@@ -56,7 +55,7 @@ export default makeScene2D(function* (view) {
         marginLeft={20}
         opacity={0.1}
       >
-        • After automated proof search for synthesized programs
+        • Splicing in the result of automated proof search
       </Txt>
     </Layout>
   );

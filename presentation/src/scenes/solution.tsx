@@ -59,7 +59,7 @@ export default makeScene2D(function* (view) {
         >
           <Layout direction={"row"}>
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              2. If a variable is bound to binder having parameter
+              2. If a variable is bound to a binder having parameter
             </Txt>
             <Latex
               tex={["u_i"]}
@@ -95,7 +95,7 @@ export default makeScene2D(function* (view) {
         >
           <Layout direction={"row"}>
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              3. If a variable is bound to binder having parameter
+              3. If a variable is bound to a binder having parameter
             </Txt>
             <Latex
               tex={["u_i"]}
@@ -121,7 +121,7 @@ export default makeScene2D(function* (view) {
           </Layout>
           <Layout direction={"row"} marginLeft={50}>
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              the parameter names for binders with a lesser distance
+              the parameter names for binders with lesser distances
             </Txt>
           </Layout>
         </Layout>
