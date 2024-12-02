@@ -14,6 +14,7 @@ import ast from "./scenes/ast?scene";
 import expressionArena from "./scenes/expression-arena?scene";
 import expressionArenaExample from "./scenes/expression-arena-example?scene";
 import expressionArenaCaveat from "./scenes/expression-arena-caveat?scene";
+import identifierArena from "./scenes/identifier-arena?scene";
 
 import "./global.css";
 
@@ -34,5 +35,6 @@ export default makeProject({
     expressionArena,
     expressionArenaExample,
     expressionArenaCaveat,
+    identifierArena,
   ],
 });
