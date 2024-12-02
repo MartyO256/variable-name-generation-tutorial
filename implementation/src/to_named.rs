@@ -51,16 +51,18 @@ impl IdentifierId {
 }
 
 struct IdentifierArena {
-    names: Vec<Option<StringId>>,
+    identifiers: Vec<Option<StringId>>,
 }
 
 impl IdentifierArena {
     pub fn new() -> IdentifierArena {
-        IdentifierArena { names: Vec::new() }
+        IdentifierArena {
+            identifiers: Vec::new(),
+        }
     }
 
     pub fn len(&self) -> usize {
-        self.names.len()
+        self.identifiers.len()
     }
 
     pub fn has(&self, id: IdentifierId) -> bool {
@@ -69,18 +71,18 @@ impl IdentifierArena {
 
     pub fn new_identifier(&mut self) -> IdentifierId {
         let index = self.len();
-        self.names.push(Option::None);
+        self.identifiers.push(Option::None);
         IdentifierId::new(index)
     }
 
     pub fn lookup(&self, id: IdentifierId) -> Option<StringId> {
         debug_assert!(self.has(id));
-        self.names[id.into_usize()]
+        self.identifiers[id.into_usize()]
     }
 
     pub fn set(&mut self, id: IdentifierId, name: StringId) {
         debug_assert!(self.has(id));
-        let previous = self.names[id.into_usize()].replace(name);
+        let previous = self.identifiers[id.into_usize()].replace(name);
         debug_assert!(previous.is_none());
     }
 }
