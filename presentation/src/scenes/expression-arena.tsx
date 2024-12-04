@@ -19,10 +19,10 @@ export default makeScene2D(function* (view) {
       width={1920}
       padding={100}
       code={`\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
@@ -38,19 +38,19 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
 impl ExpressionArena {
-    pub fn get(&self, id: ExpressionId) -> &Expression {
+    fn get(&self, id: ExpressionId) -> &Expression {
         &self.expressions[id.index]
     }
 
-    pub fn add(&mut self, expression: Expression) -> ExpressionId {
+    fn add(&mut self, expression: Expression) -> ExpressionId {
         let id = ExpressionId::new(self.expressions.len());
         self.expressions.push(expression);
         id
@@ -63,15 +63,15 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
 impl ExpressionArena {
-    pub fn get(&self, id: ExpressionId) -> &Expression {
+    fn get(&self, id: ExpressionId) -> &Expression {
         &self.expressions[id.index]
     }
 }`,
@@ -80,15 +80,15 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
 impl ExpressionArena {
-    pub fn get(&self, id: ExpressionId) -> &Expression {
+    fn get(&self, id: ExpressionId) -> &Expression {
         &self.expressions[id.index]
     }
 }
@@ -107,10 +107,10 @@ impl Index<ExpressionId> for ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
@@ -122,15 +122,15 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
 impl ExpressionArena {
-    pub fn variable(&mut self, identifier: StringId) -> ExpressionId {
+    fn variable(&mut self, identifier: StringId) -> ExpressionId {
         self.add(Expression::Variable { identifier })
     }
 }`,
@@ -141,10 +141,10 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
@@ -156,15 +156,15 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
 impl ExpressionArena {
-    pub fn abstraction(
+    fn abstraction(
         &mut self,
         parameter: Option<StringId>,
         body: ExpressionId
@@ -179,10 +179,10 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
@@ -194,15 +194,15 @@ impl ExpressionArena {
 
   yield* code().code(
     `\
-pub enum Expression { ... }
-pub struct ExpressionId { index: usize }
+enum Expression { ... }
+struct ExpressionId { index: usize }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
 impl ExpressionArena {
-    pub fn application(
+    fn application(
         &mut self,
         function: ExpressionId,
         arguments: Vec<ExpressionId>,

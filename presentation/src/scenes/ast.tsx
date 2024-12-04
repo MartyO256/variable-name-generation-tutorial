@@ -21,7 +21,7 @@ export default makeScene2D(function* (view) {
         fontSize={34}
         width={1920 / 2}
         code={`\
-pub enum Expression {
+enum Expression {
     Variable {
         identifier: Box<[u8]>,
     },
@@ -46,7 +46,7 @@ pub enum Expression {
         fontSize={34}
         width={1920 / 2}
         code={`\
-pub struct DeBruijnIndex {
+struct DeBruijnIndex {
     index: usize,
 }`}
       />
@@ -60,7 +60,7 @@ pub struct DeBruijnIndex {
   yield* all(
     codeLeft().code(
       `\
-pub enum Expression {
+enum Expression {
     Variable {
         identifier: StringId,
     },
@@ -83,21 +83,21 @@ pub enum Expression {
     ),
     codeRight().code(
       `\
-pub struct DeBruijnIndex {
+struct DeBruijnIndex {
     index: usize,
 }
 
-pub struct ExpressionArena {
+struct ExpressionArena {
     expressions: Vec<Expression>,
 }
-pub struct ExpressionId {
+struct ExpressionId {
     index: usize,
 }
 
-pub struct StringId {
+struct StringId {
     index: usize,
 }
-pub struct StringArena {
+struct StringArena {
     ids: HashMap<Rc<Box<[u8]>>, StringId>,
     strings: Vec<Rc<Box<[u8]>>>,
 }`,

@@ -24,7 +24,7 @@ struct IdentifierId { index: usize }
 struct IdentifierArena { identifiers: Vec<Option<StringId>> }
 
 impl IdentifierArena {
-    pub fn new_identifier(&mut self) -> IdentifierId {
+    fn new_identifier(&mut self) -> IdentifierId {
         let index = self.identifiers.len();
         self.identifiers.push(Option::None);
         IdentifierId::new(index)
@@ -44,13 +44,13 @@ struct IdentifierId { index: usize }
 struct IdentifierArena { identifiers: Vec<Option<StringId>> }
 
 impl IdentifierArena {
-    pub fn new_identifier(&mut self) -> IdentifierId {
+    fn new_identifier(&mut self) -> IdentifierId {
         let index = self.identifiers.len();
         self.identifiers.push(Option::None);
         IdentifierId::new(index)
     }
 
-    pub fn lookup(&self, id: IdentifierId) -> Option<StringId> {
+    fn lookup(&self, id: IdentifierId) -> Option<StringId> {
         self.identifiers[id.into_usize()]
     }
 }`,
@@ -66,17 +66,17 @@ struct IdentifierId { index: usize }
 struct IdentifierArena { identifiers: Vec<Option<StringId>> }
 
 impl IdentifierArena {
-    pub fn new_identifier(&mut self) -> IdentifierId {
+    fn new_identifier(&mut self) -> IdentifierId {
         let index = self.identifiers.len();
         self.identifiers.push(Option::None);
         IdentifierId::new(index)
     }
 
-    pub fn lookup(&self, id: IdentifierId) -> Option<StringId> {
+    fn lookup(&self, id: IdentifierId) -> Option<StringId> {
         self.identifiers[id.into_usize()]
     }
 
-    pub fn set(&mut self, id: IdentifierId, name: StringId) {
+    fn set(&mut self, id: IdentifierId, name: StringId) {
         self.identifiers[id.into_usize()] = Option::Some(name);
     }
 }`,

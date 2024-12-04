@@ -15,6 +15,7 @@ import expressionArena from "./scenes/expression-arena?scene";
 import expressionArenaExample from "./scenes/expression-arena-example?scene";
 import expressionArenaCaveat from "./scenes/expression-arena-caveat?scene";
 import identifierArena from "./scenes/identifier-arena?scene";
+import constraintStore from "./scenes/constraint-store?scene";
 
 import "./global.css";
 
@@ -36,5 +37,6 @@ export default makeProject({
     expressionArenaExample,
     expressionArenaCaveat,
     identifierArena,
+    constraintStore,
   ],
 });
