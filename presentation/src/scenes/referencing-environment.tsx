@@ -32,7 +32,7 @@ impl ReferencingEnvironment {
 
   yield* slideTransition(Direction.Right);
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("referencing-environment");
 
   yield* code().code(
     `\
@@ -62,7 +62,7 @@ impl ReferencingEnvironment {
     1
   );
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("referencing-environment");
 
   yield* code().code(
     `\
@@ -97,7 +97,7 @@ impl ReferencingEnvironment {
     1
   );
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("referencing-environment");
 
   yield* code().code(
     `\
@@ -129,7 +129,7 @@ impl ReferencingEnvironment {
     1
   );
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("referencing-environment");
 
   yield* code().code(
     `\
@@ -159,5 +159,5 @@ impl ReferencingEnvironment {
     1
   );
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("referencing-environment");
 });
