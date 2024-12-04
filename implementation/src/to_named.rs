@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{hash_map::Entry, HashMap, HashSet},
     iter::Rev,
     slice::Iter,
 };
@@ -40,12 +40,12 @@ struct IdentifierId {
 
 impl IdentifierId {
     #[inline]
-    pub fn new(index: usize) -> IdentifierId {
+    fn new(index: usize) -> IdentifierId {
         IdentifierId { index }
     }
 
     #[inline]
-    pub fn into_usize(self) -> usize {
+    fn into_usize(self) -> usize {
         self.index
     }
 }
@@ -55,32 +55,32 @@ struct IdentifierArena {
 }
 
 impl IdentifierArena {
-    pub fn new() -> IdentifierArena {
+    fn new() -> IdentifierArena {
         IdentifierArena {
             identifiers: Vec::new(),
         }
     }
 
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.identifiers.len()
     }
 
-    pub fn has(&self, id: IdentifierId) -> bool {
+    fn has(&self, id: IdentifierId) -> bool {
         id.into_usize() < self.len()
     }
 
-    pub fn new_identifier(&mut self) -> IdentifierId {
+    fn new_identifier(&mut self) -> IdentifierId {
         let index = self.len();
         self.identifiers.push(Option::None);
         IdentifierId::new(index)
     }
 
-    pub fn lookup(&self, id: IdentifierId) -> Option<StringId> {
+    fn lookup(&self, id: IdentifierId) -> Option<StringId> {
         debug_assert!(self.has(id));
         self.identifiers[id.into_usize()]
     }
 
-    pub fn set(&mut self, id: IdentifierId, name: StringId) {
+    fn set(&mut self, id: IdentifierId, name: StringId) {
         debug_assert!(self.has(id));
         let previous = self.identifiers[id.into_usize()].replace(name);
         debug_assert!(previous.is_none());
@@ -94,7 +94,7 @@ struct Constraint {
 }
 
 impl Constraint {
-    pub fn new(parameter: IdentifierId) -> Constraint {
+    fn new(parameter: IdentifierId) -> Constraint {
         Constraint {
             parameter,
             restrictions: HashSet::new(),
@@ -108,62 +108,52 @@ struct ConstraintStore {
 }
 
 impl ConstraintStore {
-    pub fn new() -> ConstraintStore {
+    fn new() -> ConstraintStore {
         ConstraintStore {
             constraints: HashMap::new(),
         }
     }
 
-    pub fn set(&mut self, expression: ExpressionId, constraint: Constraint) {
+    fn set(&mut self, expression: ExpressionId, constraint: Constraint) {
         self.constraints.insert(expression, constraint);
     }
 
-    pub fn get(&self, expression: ExpressionId) -> Option<&Constraint> {
+    fn get(&self, expression: ExpressionId) -> Option<&Constraint> {
         self.constraints.get(&expression)
     }
 
-    pub fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Constraint> {
+    fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Constraint> {
         self.constraints.get_mut(&expression)
     }
 }
 
-pub struct ReferencingEnvironment {
+struct ReferencingEnvironment {
     bindings_map: HashMap<StringId, Vec<IdentifierId>>,
-    binders: Vec<ExpressionId>,
-    size: usize,
+    binders_stack: Vec<ExpressionId>,
 }
 
 impl ReferencingEnvironment {
     #[inline]
-    pub fn new() -> ReferencingEnvironment {
+    fn new() -> ReferencingEnvironment {
         ReferencingEnvironment {
             bindings_map: HashMap::new(),
-            binders: Vec::new(),
-            size: 0,
+            binders_stack: Vec::new(),
         }
-    }
-
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.size
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 
     fn bind(&mut self, name: StringId, identifier: IdentifierId, binder: ExpressionId) {
-        if let Option::Some(stack) = self.bindings_map.get_mut(&name) {
-            stack.push(identifier);
-        } else {
-            self.bindings_map.insert(name, vec![identifier]);
-        }
-        self.binders.push(binder);
-        self.size += 1;
+        match self.bindings_map.entry(name) {
+            Entry::Occupied(mut stack) => {
+                stack.get_mut().push(identifier);
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(vec![identifier]);
+            }
+        };
+        self.binders_stack.push(binder);
     }
 
-    pub fn unbind(&mut self, identifier: StringId) {
+    fn unbind(&mut self, identifier: StringId) {
         debug_assert!(self.bindings_map.contains_key(&identifier));
         let stack = self.bindings_map.get_mut(&identifier).unwrap();
         debug_assert!(!stack.is_empty());
@@ -171,21 +161,18 @@ impl ReferencingEnvironment {
         if stack.is_empty() {
             self.bindings_map.remove(&identifier);
         }
-        self.binders.pop();
-        self.size -= 1;
+        self.binders_stack.pop();
     }
 
     #[inline]
-    pub fn shift(&mut self, binder: ExpressionId) {
-        self.binders.push(binder);
-        self.size += 1;
+    fn shift(&mut self, binder: ExpressionId) {
+        self.binders_stack.push(binder);
     }
 
     #[inline]
-    pub fn unshift(&mut self) {
-        debug_assert!(self.size > 0);
-        self.binders.pop();
-        self.size -= 1;
+    fn unshift(&mut self) {
+        debug_assert!(!self.binders_stack.is_empty());
+        self.binders_stack.pop();
     }
 
     fn lookup(&self, identifier: StringId) -> Option<IdentifierId> {
@@ -195,13 +182,13 @@ impl ReferencingEnvironment {
     }
 
     #[inline]
-    pub fn lookup_binder(&self, index: DeBruijnIndex) -> ExpressionId {
-        self.binders[self.binders.len() - index.into_usize()]
+    fn lookup_binder(&self, index: DeBruijnIndex) -> ExpressionId {
+        self.binders_stack[self.binders_stack.len() - index.into_usize()]
     }
 
     #[inline]
-    pub fn binders_iter(&self) -> Rev<Iter<'_, ExpressionId>> {
-        self.binders.iter().rev()
+    fn binders_iter(&self) -> Rev<Iter<'_, ExpressionId>> {
+        self.binders_stack.iter().rev()
     }
 }
 
@@ -219,7 +206,7 @@ struct ConstraintStoreBuilder<'a> {
 }
 
 impl<'a> ConstraintStoreBuilder<'a> {
-    pub fn new(
+    fn new(
         expressions: &'a ExpressionArena,
         identifiers: &'a mut IdentifierArena,
     ) -> ConstraintStoreBuilder<'a> {
@@ -339,7 +326,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
         }
     }
 
-    pub fn build(mut self, expression: ExpressionId) -> ConstraintStore {
+    fn build(mut self, expression: ExpressionId) -> ConstraintStore {
         self.visit(expression);
         self.constraints
     }
@@ -356,7 +343,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
 }
 
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    pub fn new(
+    fn new(
         strings: &'a mut StringArena,
         provider: &'a ExpressionArena,
         destination: &'a mut ExpressionArena,
@@ -476,7 +463,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         }
     }
 
-    pub fn convert(mut self, expression: ExpressionId) -> ExpressionId {
+    fn convert(mut self, expression: ExpressionId) -> ExpressionId {
         self.convert_to_named(expression)
     }
 }
