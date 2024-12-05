@@ -19,6 +19,7 @@ import referencingEnvironment from "./scenes/referencing-environment?scene";
 import constraintStore from "./scenes/constraint-store?scene";
 import constraintStoreBuilder from "./scenes/constraint-store-builder?scene";
 import variableGenerator from "./scenes/variable-generator?scene";
+import nameGeneration from "./scenes/name-generation?scene";
 
 import "./global.css";
 
@@ -44,5 +45,6 @@ export default makeProject({
     constraintStore,
     constraintStoreBuilder,
     variableGenerator,
+    nameGeneration,
   ],
 });
