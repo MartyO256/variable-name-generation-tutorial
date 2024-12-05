@@ -20,6 +20,7 @@ import constraintStore from "./scenes/constraint-store?scene";
 import constraintStoreBuilder from "./scenes/constraint-store-builder?scene";
 import variableGenerator from "./scenes/variable-generator?scene";
 import nameGeneration from "./scenes/name-generation?scene";
+import conclusion from "./scenes/conclusion?scene";
 
 import "./global.css";
 
@@ -46,5 +47,6 @@ export default makeProject({
     constraintStoreBuilder,
     variableGenerator,
     nameGeneration,
+    conclusion,
   ],
 });
