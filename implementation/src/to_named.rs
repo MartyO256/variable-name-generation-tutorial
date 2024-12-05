@@ -334,11 +334,11 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
 struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     strings: &'a mut StringArena,
-    provider: &'a ExpressionArena,
+    source: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
     identifiers: IdentifierArena,
     constraints: ConstraintStore,
-    binders: Vec<ExpressionId>,
+    context: Vec<Option<StringId>>,
     variable_name_generator: G,
 }
 
@@ -353,11 +353,11 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     ) -> NameGeneration<'a, G> {
         NameGeneration {
             strings,
-            provider,
+            source: provider,
             destination,
             identifiers,
             constraints,
-            binders: Vec::new(),
+            context: Vec::new(),
             variable_name_generator,
         }
     }
@@ -372,25 +372,11 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         identifiers
     }
 
-    fn lookup_binder(&self, index: &DeBruijnIndex) -> ExpressionId {
-        self.binders[self.binders.len() - index.into_usize()]
-    }
-
-    fn assign(&mut self, id: IdentifierId, name: StringId) {
-        self.identifiers.set(id, name);
-    }
-
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.provider[expression] {
+        match &self.source[expression] {
             Expression::Variable { identifier } => self.destination.variable(*identifier),
             Expression::NamelessVariable { index } => {
-                let binder = self.lookup_binder(index);
-                let Constraint {
-                    parameter,
-                    restrictions: _,
-                    used: _,
-                } = self.constraints.get(binder).unwrap();
-                let identifier = self.identifiers.lookup(*parameter).unwrap();
+                let identifier = self.context[self.context.len() - index.into_usize()].unwrap();
                 self.destination.variable(identifier)
             }
             Expression::Abstraction {
@@ -413,15 +399,15 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                         let name = self
                             .variable_name_generator
                             .fresh_name(self.strings, &claimed_identifiers);
-                        self.assign(*parameter, name);
+                        self.identifiers.set(*parameter, name);
                         Option::Some(name)
                     } else {
                         // The parameter for `expression` is never used in `body`
                         Option::None
                     };
-                self.binders.push(expression);
+                self.context.push(parameter);
                 let named_body = self.convert_to_named(*body);
-                self.binders.pop();
+                self.context.pop();
                 self.destination.abstraction(parameter, named_body)
             }
             Expression::NamelessAbstraction { body } => {
@@ -436,15 +422,15 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     let name = self
                         .variable_name_generator
                         .fresh_name(self.strings, &claimed_identifiers);
-                    self.assign(*parameter, name);
+                    self.identifiers.set(*parameter, name);
                     Option::Some(name)
                 } else {
                     // The parameter for `expression` is never used in `body`
                     Option::None
                 };
-                self.binders.push(expression);
+                self.context.push(parameter);
                 let named_body = self.convert_to_named(*body);
-                self.binders.pop();
+                self.context.pop();
                 self.destination.abstraction(parameter, named_body)
             }
             Expression::Application {
