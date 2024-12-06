@@ -18,10 +18,10 @@ export default makeScene2D(function* (view) {
         Solution (continued)
       </Txt>
       <Txt ref={step1} fontFamily={"Roboto"} fill={"white"} opacity={0.1}>
-        1. Create a store for parameters and their assigned names
+        1. Create a store for parameters, with or without assigned names
       </Txt>
       <Txt ref={step2} fontFamily={"Roboto"} fill={"white"} opacity={0.1}>
-        2. Construct a map from binders to parameters and constraints
+        2. Construct a map from binders to parameter names and constraints
       </Txt>
       <Txt ref={step3} fontFamily={"Roboto"} fill={"white"} opacity={0.1}>
         3. Traverse the input expression and update the constraints mapped to

@@ -26,7 +26,7 @@ export default makeScene2D(function* (view) {
         </Txt>
         <Latex tex={["u_i"]} fill="white" fontSize={54} marginTop={15} />
         <Txt fontFamily={"Roboto"} fill={"white"}>
-          represents the parameter for binder
+          represents the parameter name for binder
         </Txt>
         <Latex tex={["i"]} fill="white" fontSize={54} marginTop={5} />
       </Layout>
@@ -59,7 +59,7 @@ export default makeScene2D(function* (view) {
         >
           <Layout direction={"row"}>
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              2. If a variable is bound to a binder having parameter
+              2. If a variable is bound to a binder having parameter name
             </Txt>
             <Latex
               tex={["u_i"]}
@@ -69,12 +69,12 @@ export default makeScene2D(function* (view) {
               marginTop={15}
             />
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              , then the binders with
+              , then the binders
             </Txt>
           </Layout>
           <Layout direction={"row"} marginLeft={50}>
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              with a lesser distance cannot use parameter
+              with a lesser distance cannot use parameter name
             </Txt>
             <Latex
               tex={["u_i"]}
@@ -95,7 +95,7 @@ export default makeScene2D(function* (view) {
         >
           <Layout direction={"row"}>
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              3. If a variable is bound to a binder having parameter
+              3. If a variable is bound to a binder having parameter name
             </Txt>
             <Latex
               tex={["u_i"]}
@@ -107,6 +107,8 @@ export default makeScene2D(function* (view) {
             <Txt fontFamily={"Roboto"} fill={"white"}>
               , then
             </Txt>
+          </Layout>
+          <Layout direction={"row"} marginLeft={35}>
             <Latex
               tex={["u_i"]}
               fill="white"
@@ -116,12 +118,7 @@ export default makeScene2D(function* (view) {
               marginTop={15}
             />
             <Txt fontFamily={"Roboto"} fill={"white"}>
-              cannot use
-            </Txt>
-          </Layout>
-          <Layout direction={"row"} marginLeft={50}>
-            <Txt fontFamily={"Roboto"} fill={"white"}>
-              the parameter names for binders with lesser distances
+              cannot use the parameter names for binders with lesser distances
             </Txt>
           </Layout>
         </Layout>
