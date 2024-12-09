@@ -127,6 +127,12 @@ impl ConstraintStore {
     }
 }
 
+impl Default for ConstraintStore {
+    fn default() -> ConstraintStore {
+        ConstraintStore::new()
+    }
+}
+
 struct ReferencingEnvironment {
     bindings_map: HashMap<StringId, Vec<IdentifierId>>,
     binders_stack: Vec<ExpressionId>,
@@ -213,8 +219,8 @@ impl<'a> ConstraintStoreBuilder<'a> {
         ConstraintStoreBuilder {
             expressions,
             identifiers,
-            constraints: ConstraintStore::new(),
-            environment: ReferencingEnvironment::new(),
+            constraints: ConstraintStore::default(),
+            environment: ReferencingEnvironment::default(),
         }
     }
 
@@ -286,10 +292,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
             }
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                if let Option::Some(name) = parameter {
-                    // Use already defined parameter name
-                    self.identifiers.set(parameter_identifier, *name);
-                }
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
@@ -338,7 +340,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     destination: &'a mut ExpressionArena,
     identifiers: IdentifierArena,
     constraints: ConstraintStore,
-    context: Vec<Option<StringId>>,
+    environment: ReferencingEnvironment,
     variable_name_generator: G,
 }
 
@@ -357,7 +359,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
             destination,
             identifiers,
             constraints,
-            context: Vec::new(),
+            environment: ReferencingEnvironment::default(),
             variable_name_generator,
         }
     }
@@ -374,9 +376,26 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
 
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Variable { identifier } => self.destination.variable(*identifier),
+            Expression::Variable { identifier: name } => match self.environment.lookup(*name) {
+                Option::Some(identifier) => {
+                    // `expression` is a bound variable that may have been renamed
+                    let assigned_name = self.identifiers.lookup(identifier).unwrap();
+                    self.destination.variable(assigned_name)
+                }
+                Option::None => {
+                    // `expression` is a free variable
+                    self.destination.variable(*name)
+                }
+            },
             Expression::NamelessVariable { index } => {
-                let identifier = self.context[self.context.len() - index.into_usize()].unwrap();
+                // `expression` is a bound nameless variable
+                let binder = self.environment.lookup_binder(*index);
+                let Constraint {
+                    parameter,
+                    restrictions: _,
+                    used: _,
+                } = self.constraints.get(binder).unwrap();
+                let identifier = self.identifiers.lookup(*parameter).unwrap();
                 self.destination.variable(identifier)
             }
             Expression::Abstraction {
@@ -388,27 +407,47 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     restrictions,
                     used,
                 } = self.constraints.get(expression).unwrap();
-                let parameter =
-                    if let parameter @ Option::Some(_) = self.identifiers.lookup(*parameter) {
-                        // A parameter name already existed for `expression`
-                        debug_assert!(initial_parameter.is_some());
-                        parameter
-                    } else if *used {
-                        // The parameter for `expression` is used in `body`
-                        let claimed_identifiers = self.lookup_restriction_set(restrictions);
-                        let name = self
+                let chosen_parameter = if let Option::Some(name) = initial_parameter {
+                    // A parameter name already exists for `expression`
+                    let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                    if claimed_identifiers.contains(name) {
+                        // `initial_parameter` has to be renamed
+                        let new_name = self
                             .variable_name_generator
                             .fresh_name(self.strings, &claimed_identifiers);
-                        self.identifiers.set(*parameter, name);
-                        Option::Some(name)
+                        self.identifiers.set(*parameter, new_name);
+                        Option::Some(new_name)
                     } else {
-                        // The parameter for `expression` is never used in `body`
-                        Option::None
-                    };
-                self.context.push(parameter);
-                let named_body = self.convert_to_named(*body);
-                self.context.pop();
-                self.destination.abstraction(parameter, named_body)
+                        // `initial_parameter` can be used as is
+                        self.identifiers.set(*parameter, *name);
+                        Option::Some(*name)
+                    }
+                } else if *used {
+                    // The parameter for `expression` is used in `body`
+                    let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                    let name = self
+                        .variable_name_generator
+                        .fresh_name(self.strings, &claimed_identifiers);
+                    self.identifiers.set(*parameter, name);
+                    Option::Some(name)
+                } else {
+                    // The parameter for `expression` is never used in `body`
+                    Option::None
+                };
+                match initial_parameter {
+                    Option::Some(name) => {
+                        self.environment.bind(*name, *parameter, expression);
+                        let named_body = self.convert_to_named(*body);
+                        self.environment.unbind(*name);
+                        self.destination.abstraction(chosen_parameter, named_body)
+                    }
+                    Option::None => {
+                        self.environment.shift(expression);
+                        let named_body = self.convert_to_named(*body);
+                        self.environment.unshift();
+                        self.destination.abstraction(chosen_parameter, named_body)
+                    }
+                }
             }
             Expression::NamelessAbstraction { body } => {
                 let Constraint {
@@ -428,9 +467,9 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     // The parameter for `expression` is never used in `body`
                     Option::None
                 };
-                self.context.push(parameter);
+                self.environment.shift(expression);
                 let named_body = self.convert_to_named(*body);
-                self.context.pop();
+                self.environment.unshift();
                 self.destination.abstraction(parameter, named_body)
             }
             Expression::Application {
@@ -473,7 +512,7 @@ mod tests {
         let mut source_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
         let variable_name_generator = VariableNameGenerator::new();
-        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+        let referencing_environment = Rc::new(ReferencingEnvironment::default());
 
         let expression = Expression::parse_mixed_expression(
             &mut strings,
@@ -518,8 +557,12 @@ mod tests {
         test_alpha_equivalence_of_named_mixed_expression("λx. λ. x x1 x2 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λ. x 1");
         test_alpha_equivalence_of_named_mixed_expression("λ_. 1");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λ_. λx1. 3 2 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λy. x 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λx. x 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λy. λx. x 3");
+        test_alpha_equivalence_of_named_mixed_expression("λx. (λy. λx. x 3) x");
         test_alpha_equivalence_of_named_mixed_expression("λ. λx. λ. 3 x 1");
     }
 
@@ -529,7 +572,7 @@ mod tests {
         let mut nameless_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
         let variable_name_generator = VariableNameGenerator::new();
-        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+        let referencing_environment = Rc::new(ReferencingEnvironment::default());
 
         let expression =
             Expression::parse_expression(&mut strings, &mut source_expressions, input.as_bytes())
@@ -578,14 +621,14 @@ mod tests {
     fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {
         let mut strings = StringArena::new();
         let mut expressions = ExpressionArena::new();
-        let environment = Rc::new(ReferencingEnvironment::new());
+        let environment = Rc::new(ReferencingEnvironment::default());
 
         let expression =
             Expression::sample(&mut strings, &mut expressions, environment, rng, max_depth);
         let mut nameless_expressions = ExpressionArena::new();
         let mut named_expressions = ExpressionArena::new();
         let variable_name_generator = VariableNameGenerator::new();
-        let referencing_environment = Rc::new(ReferencingEnvironment::new());
+        let referencing_environment = Rc::new(ReferencingEnvironment::default());
 
         let nameless_expression = Expression::convert_to_locally_nameless(
             (referencing_environment.clone(), &expressions, expression),

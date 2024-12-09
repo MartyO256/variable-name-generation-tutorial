@@ -11,7 +11,7 @@ pub struct StringId {
 
 impl StringId {
     #[inline]
-    fn new(index: usize) -> Self {
+    fn new(index: usize) -> StringId {
         StringId { index }
     }
 
@@ -104,8 +104,9 @@ mod tests {
 
     #[test]
     fn is_initially_empty() {
-        let strings = StringArena::new();
+        let strings = StringArena::default();
         assert!(strings.len() == 0);
+        assert!(strings.is_empty());
     }
 
     #[test]

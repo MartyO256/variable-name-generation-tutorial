@@ -175,8 +175,9 @@ mod tests {
 
     #[test]
     fn arena_is_initially_empty() {
-        let expressions = ExpressionArena::new();
+        let expressions = ExpressionArena::default();
         assert!(expressions.len() == 0);
+        assert!(expressions.is_empty());
     }
 
     #[test]

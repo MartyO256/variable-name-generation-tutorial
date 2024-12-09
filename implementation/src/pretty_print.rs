@@ -154,13 +154,13 @@ impl std::fmt::Display for PrettyPrintError {
 impl std::error::Error for PrettyPrintError {}
 
 impl From<FromUtf8Error> for PrettyPrintError {
-    fn from(value: FromUtf8Error) -> Self {
+    fn from(value: FromUtf8Error) -> PrettyPrintError {
         PrettyPrintError::FromUtf8Error(value)
     }
 }
 
 impl From<std::io::Error> for PrettyPrintError {
-    fn from(value: std::io::Error) -> Self {
+    fn from(value: std::io::Error) -> PrettyPrintError {
         PrettyPrintError::IO(value)
     }
 }
