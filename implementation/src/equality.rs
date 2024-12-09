@@ -80,6 +80,7 @@ impl<'a> Equality<'a> {
 
 #[cfg(test)]
 mod tests {
+
     use crate::strings::StringArena;
 
     use super::*;
@@ -107,5 +108,48 @@ mod tests {
         assert!(Expression::equals((&expressions, r1), (&expressions, r1)));
         assert!(Expression::equals((&expressions, r1), (&expressions, r2)));
         assert!(Expression::equals((&expressions, r2), (&expressions, r2)));
+    }
+
+    fn check_expression_equality(input1: &str, input2: &str, expected: bool) {
+        let mut strings = StringArena::new();
+        let mut expressions = ExpressionArena::new();
+
+        let expression1 =
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input1.as_bytes())
+                .unwrap();
+        let expression2 =
+            Expression::parse_mixed_expression(&mut strings, &mut expressions, input2.as_bytes())
+                .unwrap();
+
+        assert_eq!(
+            Expression::equals((&expressions, expression1), (&expressions, expression2)),
+            expected
+        );
+    }
+
+    #[test]
+    fn equals_decides_structural_equality() {
+        check_expression_equality("x", "x", true);
+        check_expression_equality("λf. x", "λf. x", true);
+        check_expression_equality("λ_. x", "λ_. x", true);
+        check_expression_equality("λf. λx. f x", "λf. λx. f x", true);
+        check_expression_equality("λx. λy. λz. x z (y z)", "λx. λy. λz. x z (y z)", true);
+        check_expression_equality("λ. x", "λ. x", true);
+        check_expression_equality("λ. λ. 2 1", "λ. λ. 2 1", true);
+        check_expression_equality("λ. λ. λ. 3 1 (2 1)", "λ. λ. λ. 3 1 (2 1)", true);
+
+        check_expression_equality("x", "y", false);
+        check_expression_equality("x", "λf. y", false);
+        check_expression_equality("x", "x y", false);
+        check_expression_equality("λf. x", "λf. y", false);
+        check_expression_equality("λ_. x", "λf. x", false);
+        check_expression_equality("λ_. x", "λ_. y", false);
+        check_expression_equality("λf. x", "λg. x", false);
+        check_expression_equality("λf. λx. f x", "λf. λy. f y", false);
+        check_expression_equality("λf. λx. f x", "λg. λx. g x", false);
+        check_expression_equality("λx. λy. λz. x z (y z)", "λx. λy. λz. x z (z y)", false);
+        check_expression_equality("λ. x", "λ. y", false);
+        check_expression_equality("λ. λ. 2 1", "λ. λ. 1 2", false);
+        check_expression_equality("λ. λ. λ. 3 1 (2 1)", "λ. λ. λ. 3 1 (1 2)", false);
     }
 }
