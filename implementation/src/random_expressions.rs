@@ -118,9 +118,20 @@ impl<'a, R: Rng> ExpressionSampler<'a, R> {
                 Option::Some(identifier)
             }
         };
-        self.environment.bind_option(parameter);
-        let body = self.sample_expression(max_depth - 1);
-        self.environment.unbind_option(parameter);
+        let body = match parameter {
+            Option::Some(parameter) => {
+                self.environment.bind(parameter);
+                let body = self.sample_expression(max_depth - 1);
+                self.environment.unbind(parameter);
+                body
+            }
+            Option::None => {
+                self.environment.shift();
+                let body = self.sample_expression(max_depth - 1);
+                self.environment.unshift();
+                body
+            }
+        };
         self.expressions.abstraction(parameter, body)
     }
 

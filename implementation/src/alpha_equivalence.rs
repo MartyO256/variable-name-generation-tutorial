@@ -89,42 +89,88 @@ impl<'a> AlphaEquivalence<'a> {
                     parameter: param2,
                     body: b2,
                 },
-            ) => {
-                self.environment1.bind_option(*param1);
-                self.environment2.bind_option(*param2);
-                let r = self.alpha_equivalent(*b1, *b2);
-                self.environment2.unbind_option(*param2);
-                self.environment1.unbind_option(*param1);
-                r
-            }
+            ) => match (param1, param2) {
+                (Option::Some(param1), Option::Some(param2)) => {
+                    self.environment1.bind(*param1);
+                    self.environment2.bind(*param2);
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unbind(*param2);
+                    self.environment1.unbind(*param1);
+                    r
+                }
+                (Option::Some(param1), Option::None) => {
+                    self.environment1.bind(*param1);
+                    self.environment2.shift();
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unshift();
+                    self.environment1.unbind(*param1);
+                    r
+                }
+                (Option::None, Option::Some(param2)) => {
+                    self.environment1.shift();
+                    self.environment2.bind(*param2);
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unbind(*param2);
+                    self.environment1.unshift();
+                    r
+                }
+                (Option::None, Option::None) => {
+                    self.environment1.shift();
+                    self.environment2.shift();
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unshift();
+                    self.environment1.unshift();
+                    r
+                }
+            },
             (
                 Expression::Abstraction {
                     parameter: param1,
                     body: b1,
                 },
                 Expression::NamelessAbstraction { body: b2 },
-            ) => {
-                self.environment1.bind_option(*param1);
-                self.environment2.shift();
-                let r = self.alpha_equivalent(*b1, *b2);
-                self.environment2.unshift();
-                self.environment1.unbind_option(*param1);
-                r
-            }
+            ) => match param1 {
+                Option::Some(param1) => {
+                    self.environment1.bind(*param1);
+                    self.environment2.shift();
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unshift();
+                    self.environment1.unbind(*param1);
+                    r
+                }
+                Option::None => {
+                    self.environment1.shift();
+                    self.environment2.shift();
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unshift();
+                    self.environment1.unshift();
+                    r
+                }
+            },
             (
                 Expression::NamelessAbstraction { body: b1 },
                 Expression::Abstraction {
                     parameter: param2,
                     body: b2,
                 },
-            ) => {
-                self.environment1.shift();
-                self.environment2.bind_option(*param2);
-                let r = self.alpha_equivalent(*b1, *b2);
-                self.environment2.unbind_option(*param2);
-                self.environment1.unshift();
-                r
-            }
+            ) => match param2 {
+                Option::Some(param2) => {
+                    self.environment1.shift();
+                    self.environment2.bind(*param2);
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unbind(*param2);
+                    self.environment1.unshift();
+                    r
+                }
+                Option::None => {
+                    self.environment1.shift();
+                    self.environment2.shift();
+                    let r = self.alpha_equivalent(*b1, *b2);
+                    self.environment2.unshift();
+                    self.environment1.unshift();
+                    r
+                }
+            },
             (
                 Expression::NamelessAbstraction { body: b1 },
                 Expression::NamelessAbstraction { body: b2 },

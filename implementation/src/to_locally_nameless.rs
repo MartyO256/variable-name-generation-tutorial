@@ -47,12 +47,20 @@ impl<'a> Indexing<'a> {
                 }
             }
             Expression::NamelessVariable { index } => self.destination.nameless_variable(*index),
-            Expression::Abstraction { parameter, body } => {
-                self.environment.bind_option(*parameter);
-                let indexed_body = self.convert_to_locally_nameless(*body);
-                self.environment.unbind_option(*parameter);
-                self.destination.nameless_abstraction(indexed_body)
-            }
+            Expression::Abstraction { parameter, body } => match parameter {
+                Option::Some(parameter) => {
+                    self.environment.bind(*parameter);
+                    let indexed_body = self.convert_to_locally_nameless(*body);
+                    self.environment.unbind(*parameter);
+                    self.destination.nameless_abstraction(indexed_body)
+                }
+                Option::None => {
+                    self.environment.shift();
+                    let indexed_body = self.convert_to_locally_nameless(*body);
+                    self.environment.unshift();
+                    self.destination.nameless_abstraction(indexed_body)
+                }
+            },
             Expression::NamelessAbstraction { body } => {
                 self.environment.shift();
                 let indexed_body = self.convert_to_locally_nameless(*body);

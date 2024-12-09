@@ -43,11 +43,18 @@ impl<'a> FreeVariables<'a> {
                 }
             }
             Expression::NamelessVariable { index: _ } => {}
-            Expression::Abstraction { parameter, body } => {
-                self.environment.bind_option(*parameter);
-                self.visit(*body);
-                self.environment.unbind_option(*parameter);
-            }
+            Expression::Abstraction { parameter, body } => match parameter {
+                Option::Some(parameter) => {
+                    self.environment.bind(*parameter);
+                    self.visit(*body);
+                    self.environment.unbind(*parameter);
+                }
+                Option::None => {
+                    self.environment.shift();
+                    self.visit(*body);
+                    self.environment.unshift();
+                }
+            },
             Expression::NamelessAbstraction { body } => {
                 self.environment.shift();
                 self.visit(*body);

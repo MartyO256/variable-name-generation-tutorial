@@ -107,22 +107,6 @@ impl ReferencingEnvironment {
         self.size -= 1;
     }
 
-    #[inline]
-    pub fn bind_option(&mut self, identifier: Option<StringId>) {
-        match identifier {
-            Option::Some(identifier) => self.bind(identifier),
-            Option::None => self.shift(),
-        }
-    }
-
-    #[inline]
-    pub fn unbind_option(&mut self, identifier: Option<StringId>) {
-        match identifier {
-            Option::Some(identifier) => self.unbind(identifier),
-            Option::None => self.unshift(),
-        }
-    }
-
     pub fn lookup(&self, identifier: StringId) -> Option<usize> {
         self.bindings_map
             .get(&identifier)
