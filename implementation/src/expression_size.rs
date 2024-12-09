@@ -66,5 +66,8 @@ mod tests {
         check_expression_size("λf. x", 2);
         check_expression_size("λf. λx. f x", 5);
         check_expression_size("λx. λy. λz. x z (y z)", 9);
+        check_expression_size("λ. x", 2);
+        check_expression_size("λ. λ. 2 1", 5);
+        check_expression_size("λ. λ. λ. 3 1 (2 1)", 9);
     }
 }
