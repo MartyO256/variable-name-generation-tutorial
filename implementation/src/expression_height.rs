@@ -66,5 +66,8 @@ mod tests {
         check_expression_height("λf. x", 1);
         check_expression_height("λf. λx. f x", 2);
         check_expression_height("λx. λy. λz. x z (y z)", 3);
+        check_expression_height("λ. x", 1);
+        check_expression_height("λ. λ. 2 1", 2);
+        check_expression_height("λ. λ. λ. 3 1 (2 1)", 3);
     }
 }
