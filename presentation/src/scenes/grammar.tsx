@@ -45,7 +45,7 @@ export default makeScene2D(function* (view) {
       "\\mid",
       "{\\color{cyan}{{\\lambda. M}}}",
     ],
-    1
+    2
   );
 
   yield* beginSlide("nameless-grammar");

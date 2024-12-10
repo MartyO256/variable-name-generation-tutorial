@@ -9,6 +9,7 @@ import workedExample1 from "./scenes/worked-example1?scene";
 import workedExample2 from "./scenes/worked-example2?scene";
 import workedExample3 from "./scenes/worked-example3?scene";
 import workedExample4 from "./scenes/worked-example4?scene";
+import workedExample5 from "./scenes/worked-example5?scene";
 import grammar from "./scenes/grammar?scene";
 import ast from "./scenes/ast?scene";
 import expressionArena from "./scenes/expression-arena?scene";
@@ -37,6 +38,7 @@ export default makeProject({
     workedExample2,
     workedExample3,
     workedExample4,
+    workedExample5,
     grammar,
     ast,
     expressionArena,

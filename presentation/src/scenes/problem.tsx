@@ -11,6 +11,7 @@ export default makeScene2D(function* (view) {
   const example2 = createRef<Latex>();
   const example3 = createRef<Latex>();
   const example4 = createRef<Latex>();
+  const example5 = createRef<Latex>();
 
   view.add(
     <Layout direction={"column"} gap={40} width={1920} padding={100} layout>
@@ -152,6 +153,20 @@ export default makeScene2D(function* (view) {
           fontSize={54}
           opacity={0.1}
         />
+        <Latex
+          ref={example5}
+          tex={[
+            "\\vphantom{f}",
+            "\\lambda{}x.\\ ",
+            "\\lambda{}",
+            "x",
+            ".",
+            "\\ 2\\ 1",
+          ]}
+          fill="white"
+          fontSize={54}
+          opacity={0.1}
+        />
       </Layout>
     </Layout>
   );
@@ -252,6 +267,22 @@ export default makeScene2D(function* (view) {
       "\\ ",
       "x",
     ],
+    1
+  );
+
+  yield* beginSlide("problem");
+
+  yield* example5().opacity(1, 1);
+
+  yield* beginSlide("problem");
+
+  yield* example5().tex(
+    ["\\vphantom{f}", "\\lambda{}x.\\ ", "\\lambda{}", "y", ".", "\\ 2\\ 1"],
+    1
+  );
+
+  yield* example5().tex(
+    ["\\vphantom{f}", "\\lambda{}x.\\ ", "\\lambda{}", "y", ".", "\\ x\\ y"],
     1
   );
 

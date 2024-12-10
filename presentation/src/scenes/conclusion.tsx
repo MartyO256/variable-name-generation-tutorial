@@ -18,7 +18,7 @@ export default makeScene2D(function* (view) {
         Conclusion
       </Txt>
       <Txt ref={step1} fontFamily={"Roboto"} fill={"white"} opacity={0.1}>
-        1. Use an AST representation that supports extensions
+        1. Use an abstract syntax tree representation that supports extensions
       </Txt>
       <Txt ref={step2} fontFamily={"Roboto"} fill={"white"} opacity={0.1}>
         2. Formulate name generation as a constraint satisfaction problem

@@ -98,7 +98,7 @@ struct NameGeneration<'a> {
     destination: &'a mut ExpressionArena,
     identifiers: IdentifierArena,
     constraints: ConstraintStore,
-    context: Vec<Option<StringId>>
+    environment: ReferencingEnvironment
 }`,
     1
   );
@@ -113,7 +113,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     destination: &'a mut ExpressionArena,
     identifiers: IdentifierArena,
     constraints: ConstraintStore,
-    context: Vec<Option<StringId>>,
+    environment: ReferencingEnvironment,
     variable_name_generator: G
 }`,
     1
@@ -251,126 +251,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Variable { identifier } => {
-            
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("name-generation");
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            Expression::Variable { identifier } => {
-                self.destination.variable(*identifier)
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("name-generation");
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            Expression::NamelessVariable { index } => {
-                
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("name-generation");
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            Expression::NamelessVariable { index } => {
-                let identifier = self.context[self.context.len() - index.into_usize()].unwrap();
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("name-generation");
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            Expression::NamelessVariable { index } => {
-                let identifier = self.context[self.context.len() - index.into_usize()].unwrap();
-                self.destination.variable(identifier)
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("name-generation");
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
-
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
-    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
-        match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
 
             }
         }
@@ -388,7 +269,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint {
                     parameter,
                     restrictions,
@@ -410,7 +291,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
             }
         }
@@ -426,11 +307,11 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
-                let parameter =
-                    if let parameter @ Option::Some(_) = self.identifiers.lookup(*parameter) {
-                        parameter
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        
                     };
             }
         }
@@ -448,11 +329,121 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
-                let parameter =
-                    if let parameter @ Option::Some(_) = self.identifiers.lookup(*parameter) {
-                        parameter
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                        if claimed_identifiers.contains(name) {
+                            
+                        } else {
+                         
+                        }
+                    };
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
+                let Constraint { parameter, restrictions, used } = /* ... */;
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                        if claimed_identifiers.contains(name) {
+                            let new_name = self
+                                .variable_name_generator
+                                .fresh_name(self.strings, &claimed_identifiers);
+                            self.identifiers.set(*parameter, new_name);
+                            Option::Some(new_name)
+                        } else {
+                            
+                        }
+                    };
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
+                let Constraint { parameter, restrictions, used } = /* ... */;
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                        if claimed_identifiers.contains(name) {
+                            let new_name = self
+                                .variable_name_generator
+                                .fresh_name(self.strings, &claimed_identifiers);
+                            self.identifiers.set(*parameter, new_name);
+                            Option::Some(new_name)
+                        } else {
+                            self.identifiers.set(*parameter, *name);
+                            Option::Some(*name)
+                        }
+                    };
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
+                let Constraint { parameter, restrictions, used } = /* ... */;
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        // ...
+                    };
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
+                let Constraint { parameter, restrictions, used } = /* ... */;
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        // ...
                     } else if *used {
                         let claimed_identifiers = self.lookup_restriction_set(restrictions);
                         let name = self
@@ -477,11 +468,11 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
-                let parameter =
-                    if let parameter @ Option::Some(_) = self.identifiers.lookup(*parameter) {
-                        parameter
+                let chosen_parameter =
+                    if let Option::Some(name) = initial_parameter {
+                        // ...
                     } else if *used {
                         let claimed_identifiers = self.lookup_restriction_set(restrictions);
                         let name = self
@@ -508,9 +499,9 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
-                let parameter = /* ... */;
+                let chosen_parameter = /* ... */;
             }
         }
     }
@@ -525,12 +516,17 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
-                let parameter = /* ... */;
-                self.context.push(parameter);
-                let named_body = self.convert_to_named(*body);
-                self.context.pop();
+                let chosen_parameter = /* ... */;
+                match initial_parameter {
+                    Option::Some(name) => {
+                    
+                    }
+                    Option::None => {
+
+                    }
+                }
             }
         }
     }
@@ -547,13 +543,53 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Abstraction { parameter: _, body } => {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
-                let parameter = /* ... */;
-                self.context.push(parameter);
-                let named_body = self.convert_to_named(*body);
-                self.context.pop();
-                self.destination.abstraction(parameter, named_body)
+                let chosen_parameter = /* ... */;
+                match initial_parameter {
+                    Option::Some(name) => {
+                        self.environment.bind(*name, *parameter, expression);
+                        let named_body = self.convert_to_named(*body);
+                        self.environment.unbind(*name);
+                        self.destination.abstraction(chosen_parameter, named_body)
+                    }
+                    Option::None => {
+                    
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Abstraction { parameter: initial_parameter, body } => {
+                let Constraint { parameter, restrictions, used } = /* ... */;
+                let chosen_parameter = /* ... */;
+                match initial_parameter {
+                    Option::Some(name) => {
+                        self.environment.bind(*name, *parameter, expression);
+                        let named_body = self.convert_to_named(*body);
+                        self.environment.unbind(*name);
+                        self.destination.abstraction(chosen_parameter, named_body)
+                    }
+                    Option::None => {
+                        self.environment.shift(expression);
+                        let named_body = self.convert_to_named(*body);
+                        self.environment.unshift();
+                        self.destination.abstraction(chosen_parameter, named_body)
+                    }
+                }
             }
         }
     }
@@ -688,10 +724,241 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
             Expression::NamelessAbstraction { body } => {
                 let Constraint { parameter, restrictions, used } = /* ... */;
                 let parameter = /* ... */;
-                self.context.push(parameter);
+                self.environment.shift(expression);
                 let named_body = self.convert_to_named(*body);
-                self.context.pop();
+                self.environment.unshift();
                 self.destination.abstraction(parameter, named_body)
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Variable { identifier } => {
+            
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Variable { identifier } => {
+                match self.environment.lookup(*name) {
+                    Option::Some(identifier) => {
+
+                    }
+                    Option::None => {
+                    
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Variable { identifier } => {
+                match self.environment.lookup(*name) {
+                    Option::Some(identifier) => {
+                        let assigned_name = self.identifiers.lookup(identifier).unwrap();
+                        self.destination.variable(assigned_name)
+                    }
+                    Option::None => {
+                        
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::Variable { identifier } => {
+                match self.environment.lookup(*name) {
+                    Option::Some(identifier) => {
+                        let assigned_name = self.identifiers.lookup(identifier).unwrap();
+                        self.destination.variable(assigned_name)
+                    }
+                    Option::None => {
+                        self.destination.variable(*name)
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::NamelessVariable { index } => {
+                
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+                let Constraint {
+                    parameter,
+                    restrictions: _,
+                    used: _,
+                } = self.constraints.get(binder).unwrap();
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+                let Constraint {
+                    parameter,
+                    restrictions: _,
+                    used: _,
+                } = self.constraints.get(binder).unwrap();
+                let identifier = self.identifiers.lookup(*parameter).unwrap();
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("name-generation");
+
+  yield* code().code(
+    `\
+struct NameGeneration<'a, G: FreshVariableNameGenerator> { /* ... */ }
+
+impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
+        match &self.source[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+                let Constraint {
+                    parameter,
+                    restrictions: _,
+                    used: _,
+                } = self.constraints.get(binder).unwrap();
+                let identifier = self.identifiers.lookup(*parameter).unwrap();
+                self.destination.variable(identifier)
             }
         }
     }

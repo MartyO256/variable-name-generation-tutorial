@@ -53,8 +53,17 @@ This means that both lambda abstractions cannot use $x$ as parameter name, other
 λ. λ. 1 => λ_. λx. x
 ```
 
-In this last expression, we have two lambda abstractions, but only the innermost one is actually used.
+In this fourth expression, we have two lambda abstractions, but only the innermost one is actually used.
 To make this problem more interesting, we'll also cover how to determine whether a binder's parameter is actually used, so that we can choose underscore as parameter name to denote that it is not used.
+
+```
+λx. λx. 2 1 => λx. λy. x y
+```
+
+In this last example, we have two lambda abstractions with the same parameter name.
+In the named setting, this means the parameter for the outermost abstraction is unreachable.
+However, we have unnamed variables referencing both parameters.
+To convert to a named respresentation of the expression, we'll have to rename one of the two parameters.
 
 Let's see how we can solve this problem.
 

@@ -345,8 +345,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
-
   yield* code().code(
     `\
 struct ConstraintStoreBuilder<'a> {
@@ -549,55 +547,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                if let Option::Some(name) = parameter {
-                    self.identifiers.set(parameter_identifier, *name);
-                }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                // ...
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                // ...
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
             }
@@ -623,7 +572,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                // ...
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
@@ -654,7 +602,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                // ...
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
@@ -688,7 +635,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                // ...
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
@@ -715,7 +661,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                // ...
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
@@ -746,7 +691,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                // ...
                 let constraint = Constraint::new(parameter_identifier);
                 self.constraints.set(expression, constraint);
                 match parameter {
