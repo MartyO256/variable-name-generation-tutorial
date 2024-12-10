@@ -216,7 +216,9 @@ export default makeScene2D(function* (view) {
 
   yield* all(cursor2().opacity(0, 1), lambda2().fill("white", 1));
 
-  yield* used2().text("Used", 1);
+  yield* used2().opacity(0, 0.5);
+  yield* used2().text("Used", 0);
+  yield* used2().opacity(1, 0.5);
 
   yield* beginSlide("worked-example");
 
@@ -248,10 +250,7 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* all(
-    u1().tex(["\\textunderscore"], 1),
-    lambda1().tex(["\\vphantom{(}\\lambda{}", "\\textunderscore", "."], 1)
-  );
+  yield* lambda1().tex(["\\vphantom{(}\\lambda{}", "\\textunderscore", "."], 1);
 
   yield* beginSlide("worked-example");
 

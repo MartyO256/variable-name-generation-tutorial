@@ -148,11 +148,62 @@ We've successfully converted from that fully nameless expression to an alpha-equ
 
 ## Worked Example 2
 
+Next up is the expression with a binder already having a parameter name.
+We construct constraints for both binders, assigning undetermined parameter names $u_1$ and $u_2$ to the lambda abstractions.
+When we reach bound variable name $f$, we traverse the stack of binders until we reach the one with parameter name $f$.
+The binders we reach in-between cannot use name $u_1$, so we add it to the set of restrictions.
+
+We use identifier $u_1$ instead of $f$ here is because we have not yet decided what should be the value for parameter name $u_1$.
+We'll see why this is important in example 5 when we have to rename bound variables.
+
+Once we've marked both parameters as used, we re-traverse the expression and select parameter names that satisfy the constraints we built.
+For the outermost binder, we can use the existing parameter name $f$ since that name is not in the set of restrictions for it.
+For $u_2$, we choose name $x$ following the sequence of names.
+
+When we reach named variable $f$, we look up its corresponding binder in the original expression and use the parameter name assigned to it.
+In this case, the parameter name is still $f$.
+
 ## Worked Example 3
+
+Let's move to the next example expression, which contains a free variable.
+We proceed with the creation of constraints for the binders like in the previous examples.
+When we reach free variable $x$, we need to add its name to the set of restrictions for all parent abstractions.
+In the implementation, we create a new undetermined variable $u_3$ and assign it value $x$.
+This simplifies the data type for sets of restrictions.
+
+Once we have the constraints, we select names for the parameters as before.
+For this example, we could have two sequences of parameter names, one for variables and the other for functions.
+We could decide which of the two sequences to use based on type information computed during type-checking.
+So here, we select $f$ for the outermost binder abstracting over a function, and $y$ for the innermost binder abstracting over a ground value.
 
 ## Worked Example 4
 
+Let's see an example where we have unused parameter names.
+When we construct the constraints for binders, the flag for whether the parameter is used is initially set to `false`.
+When we reach the bound unnamed variable with de Bruijn index `1`, we update the `used` flag to `true` for the innermost binder.
+The outermost binder is still marked as unused after the first traversal of the expression.
+
+In the second traversal, we select `_` as the parameter name for the binder, but we do not assign that `_` to $u_1$ since we want other binders to be able to use that same `_` name.
+For the second binder we have no names in the restriction set, so we select parameter name $x$ and resolve the bound nameless variable to it.
+
+## Worked Example 5
+
+For this last example, we'll see how to handle the renaming of bound variables.
+Here we have a reference to the outermost binder that cannot occur in a named representation while re-using the existing parameter names.
+Ther innermost binder shadows the outermost one, so de Bruijn index `2` is problematic.
+Thankfully, the way we construct constraints and restriction sets does not change.
+Undetermined parameter name $u_1$ cannot be used for $u_2$.
+
+In the second traversal of the expression, we choose parameter name $x$ for the outermost binder since that is the name that was already there in the initial expression.
+This updates the restriction set for the second binder.
+In that second binder, we would like to use the parameter name that was already present.
+However, since that parameter name occurs in the restriction set, we know that we have to rename it, so we choose name $y$ instead.
+We update the nameless bound variables accordingly.
+If we had named variables referencing that innermost binder, we would have to perform a lookup on the referencing environment where the topmost binding for name $x$ maps it to identifier $u_2$ having value $y$.
+
 ## Grammar
+
+Without further ado, let's jump into the implementation for this variable name generation problem.
 
 ## AST
 
