@@ -23,6 +23,7 @@ import variableGenerator from "./scenes/variable-generator?scene";
 import nameGeneration from "./scenes/name-generation?scene";
 import conclusion from "./scenes/conclusion?scene";
 import futureWork from "./scenes/future-work?scene";
+import outro from "./scenes/outro?scene";
 
 import "./global.css";
 
@@ -52,5 +53,6 @@ export default makeProject({
     nameGeneration,
     conclusion,
     futureWork,
+    outro,
   ],
 });

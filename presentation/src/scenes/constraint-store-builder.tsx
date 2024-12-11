@@ -67,6 +67,384 @@ struct ConstraintStoreBuilder<'a> {
 impl<'a> ConstraintStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
+        
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+                match parameter {
+                    Option::Some(parameter) => {
+                        
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+                match parameter {
+                    Option::Some(parameter) => {
+                        self.environment
+                            .bind(*parameter, parameter_identifier, expression);
+                        self.visit(*body);
+                        self.environment.unbind(*parameter);
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+                match parameter {
+                    
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+                match parameter {
+                    Option::None => {
+                    
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Abstraction { parameter, body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+                match parameter {
+                    Option::None => {
+                        self.environment.shift(expression);
+                        self.visit(*body);
+                        self.environment.unshift();
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessAbstraction { body } => {
+            
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessAbstraction { body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessAbstraction { body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessAbstraction { body } => {
+                let parameter_identifier = self.identifiers.new_identifier();
+                let constraint = Constraint::new(parameter_identifier);
+                self.constraints.set(expression, constraint);
+                self.environment.shift(expression);
+                self.visit(*body);
+                self.environment.unshift();
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("constraint-store-builder");
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+        
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+struct ConstraintStoreBuilder<'a> {
+    expressions: &'a ExpressionArena,
+    identifiers: &'a mut IdentifierArena,
+    constraints: ConstraintStore,
+    environment: ReferencingEnvironment,
+}
+
+impl<'a> ConstraintStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
             Expression::Variable {
                 identifier: variable,
             } => {
@@ -459,365 +837,6 @@ impl<'a> ConstraintStoreBuilder<'a> {
                 for additional_restriction in additional_restrictions {
                     restrictions.insert(additional_restriction);
                 }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-        
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-                match parameter {
-                    Option::Some(parameter) => {
-                        
-                    }
-                }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-                match parameter {
-                    Option::Some(parameter) => {
-                        self.environment
-                            .bind(*parameter, parameter_identifier, expression);
-                        self.visit(*body);
-                        self.environment.unbind(*parameter);
-                    }
-                }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-                match parameter {
-                    
-                }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-                match parameter {
-                    Option::None => {
-                    
-                    }
-                }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Abstraction { parameter, body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-                match parameter {
-                    Option::None => {
-                        self.environment.shift(expression);
-                        self.visit(*body);
-                        self.environment.unshift();
-                    }
-                }
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::NamelessAbstraction { body } => {
-            
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::NamelessAbstraction { body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::NamelessAbstraction { body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("constraint-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::NamelessAbstraction { body } => {
-                let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
-                self.environment.shift(expression);
-                self.visit(*body);
-                self.environment.unshift();
             }
         }
     }

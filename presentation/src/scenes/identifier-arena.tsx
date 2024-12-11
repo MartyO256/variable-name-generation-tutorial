@@ -24,16 +24,30 @@ struct IdentifierId { index: usize }
 struct IdentifierArena { identifiers: Vec<Option<StringId>> }
 
 impl IdentifierArena {
-    fn new_identifier(&mut self) -> IdentifierId {
-        let index = self.identifiers.len();
-        self.identifiers.push(Option::None);
-        IdentifierId::new(index)
-    }
+
 }`}
     />
   );
 
   yield* slideTransition(Direction.Right);
+
+  yield* beginSlide("identifier-arena");
+
+  yield* code().code(
+    `\
+struct IdentifierId { index: usize }
+
+struct IdentifierArena { identifiers: Vec<Option<StringId>> }
+
+impl IdentifierArena {
+    fn new_identifier(&mut self) -> IdentifierId {
+        let index = self.identifiers.len();
+        self.identifiers.push(Option::None);
+        IdentifierId::new(index)
+    }
+}`,
+    1
+  );
 
   yield* beginSlide("identifier-arena");
 

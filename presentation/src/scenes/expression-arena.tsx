@@ -49,6 +49,25 @@ impl ExpressionArena {
     fn get(&self, id: ExpressionId) -> &Expression {
         &self.expressions[id.index]
     }
+}`,
+    1
+  );
+
+  yield* beginSlide("expression-arena");
+
+  yield* code().code(
+    `\
+enum Expression { ... }
+struct ExpressionId { index: usize }
+
+struct ExpressionArena {
+    expressions: Vec<Expression>,
+}
+
+impl ExpressionArena {
+    fn get(&self, id: ExpressionId) -> &Expression {
+        &self.expressions[id.index]
+    }
 
     fn add(&mut self, expression: Expression) -> ExpressionId {
         let id = ExpressionId::new(self.expressions.len());

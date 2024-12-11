@@ -85,11 +85,11 @@ struct ReferencingEnvironment {
 }
 
 impl ReferencingEnvironment {
-    fn unbind(&mut self, identifier: StringId) {
-        let stack = self.bindings_map.get_mut(&identifier).unwrap();
+    fn unbind(&mut self, name: StringId) {
+        let stack = self.bindings_map.get_mut(&name).unwrap();
         stack.pop();
         if stack.is_empty() {
-            self.bindings_map.remove(&identifier);
+            self.bindings_map.remove(&name);
         }
         self.binders_stack.pop();
     }
@@ -120,9 +120,9 @@ struct ReferencingEnvironment {
 }
 
 impl ReferencingEnvironment {
-    fn lookup(&self, identifier: StringId) -> Option<IdentifierId> {
+    fn lookup(&self, name: StringId) -> Option<IdentifierId> {
         self.bindings_map
-            .get(&identifier)
+            .get(&name)
             .and_then(|stack| stack.last().copied())
     }
 }`,
