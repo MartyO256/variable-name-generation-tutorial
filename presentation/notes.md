@@ -204,27 +204,156 @@ If we had named variables referencing that innermost binder, we would have to pe
 ## Grammar
 
 Without further ado, let's jump into the implementation for this variable name generation problem.
+I invite you to have a look at the implementation avaiable at the GitHub repository linked in the description.
+Feel free to pause this video as we walk through the code.
+
+Like in the examples, we'll focus on an untyped lambda calculus in mixed representation.
+By mixed representation, I mean that we can have named free or bound variables and named lambda abstractions, and that we can also have nameless bound variables represented as de Bruijn indices and unnamed lambda abstractions.
+Our goal is to convert an expression in mixed representation to a fully named representation by soundly generating parameter names for unnamed lambda abstractions.
 
 ## AST
 
+In Rust, the typical way to represent such expressions is with a recursive `enum` type, with nested expressions stored as boxes of expressions (`Box<Expression>`).
+This could work, but we're missing a key feature with this data representation.
+We won't be able to implement a mapping from binders to constraints.
+To do that, we need a way to uniquely refer to expressions in a region, and a way to map to and from such references.
+
+We solve this by using a flattened representation for expressions, with an arena allocation implemented as a vector of expressions.
+Here, within a given expression arena, expressions are uniquely referred to by their index in the vector.
+To construct maps with binders as keys, we'll be able to use a hash map, with expression IDs as keys.
+
+Distinct expressions in an expression arena will have distinct expression IDs.
+This means that, for instance, each occurrence of a variable `x` in an expression has its own expression ID.
+
+We'll use a similar arena-based representation for strings.
+However here, two equal strings will have equal string IDs.
+This will speed up operations involving hash set or hash maps of strings since it is less expensive to hash an integer than it is to hash a string.
+
 ## Expression Arena
+
+We'll need two basic operations for expression arenas:
+
+- a function to get an expression from an ID, and
+- a function to add an expression into the arena and obtain its corresponding ID.
+
+For convenience, we can implement the `Index<ExpressionId>` trait so that we can use the vector indexing notation to get expressions out of arenas.
+
+We'll implement simple builder functions to construct expressions owned by the arena.
+These functions simply take as input the fields for each variant, construct the corresponding expressions, add them to the arena and return their IDs.
 
 ## Expression Arena Example
 
+Using string and expression arenas, we can construct expressions like the application of `f` with arguments `x` and `y` as follows.
+First, we construct an arena for the strings, and intern the identifiers `f`, `x` and `y`.
+Second, we construct the expression "bottom-up" by constructing the named variables first using those interned strings, and then by constructing the application using the variables.
+Finally, to retrieve the actual expression stored in the arena, we use the index operation with the ID we got when we constructed the expression.
+
 ## Expression Arena Caveat
+
+This arena-based flat representation for expressions has its flaws.
+Wherever we have a computation taking an expression as input, we now need to pass both an expression arena and an expression ID.
+We then have to perform a lookup in the arena for the expression with that ID just to get back the expression.
+
+That being said, all expressions in an arena are stored contiguously in memory, which can have performance benefits.
+It is trivial to serialize expressions since it just amounts to serializing the vector.
+Taking ownership of an expression means taking ownership of the expression arena it lies in.
+This can help in implementing safe multithreaded processes.
+For variable name generation however, we just need this representation to support constructing maps from expression IDs to constraints.
+
+Alternatives to this design include giving global IDs to expressions as they are created.
+This does come with the issue of ensuring that each ID is unique.
+
+We can also use a cursor data structure during an AST traversal to construct a tree annotated with the data we need for binders.
+This would not be as lightweight as simply having a hash map.
 
 ## Identifier Arena
 
+Next up, for a given expression to convert to named representation, we need a way to create unique variables for binder parameter names.
+We'll use a similar arena-based approach where a unique ID for a parameter name within an arena of identifiers is just the index into the vector for that identifier.
+
+This identifier arena structure holds a vector of optional strings referenced by ID.
+When we create a new identifier, it starts off without having an assigned string value to it.
+That is to say, the identifier still has an undetermined value.
+Lookups and assignments in an identifier arena proceed in a straightforward manner.
+
 ## Referencing Environment
+
+Later, we'll be performing two top-down traversals of the input expression:
+
+1. the first time for creating constraints, and
+2. the second time to choose parameter names satisfying those constraints, renaming bound variables as needed.
+
+We'll need a representation for the state of identifiers in scope and what they are bound to.
+For this, we introduce this referencing environment structure.
+
+The `bindings_map` holds an assocation from parameter names in the input expression to a stack of undetermined identifiers.
+This map allows use to perform lookups by name.
+The stacks held as values in the map allow us to represent the shadowing of bindings.
+
+We'll also store a stack of expressions for the lambda expressions.
+This will allow us to resolve nameless variables to their binders.
+
+- When we bind a name, we push the identifier onto the stack of bindings for that name, and push the binder expression onto the stack of binders.
+- When we unbind a name, we pop the stack mapped to that name, and we pop the stack of binders.
+- When we lookup the latest identifier associated with a given name, we lookup the hash map and retrieve the last element pushed onto the stack of bindings.
+- When we want to iterate from the innermost binder to the outermost binder (from right to left in the examples), we need to iterate over the stack of binders in reverse order.
 
 ## Constraints
 
+The constraints assigned to each binder in the expression is the identifier assigned for the parameter name, the set of identifiers that cannot be used for the parameter name, and a boolean flag to determine whether the parameter name is used.
+
+We store these constraints in a hash map, mapping named and unnamed lambda expressions to constraints.
+We provide a `get` function to retrieve those cosntraints, and a `get_mut` variable to return mutable references to constraints.
+
 ## Constraint Store Builder
 
+With all these auxiliary data structures defined, we've now reached the point where we need to traverse the input expression and build constraints for the binder parameter names.
+We store all the traversal state data in the `ConstraintStoreBuilder` fields, and implement a recursive `visit` function.
+
+- In the case where the expression is a lambda abstraction, we create a new identifier for its parameter name. Next, we construct a new constraint and assign it to the `expression`. Then, we check if parameter has a user-defined name. If it does, we bind it in the referencing environment, then we recurse on the lambda expression's body, and finally we unbind the parameter. If the lambda expression does not have a user-defined name, we shift the referencing environment then we recurse on the lambda expression's body, and finally we unshift the referencing environment.
+- In the case where the expression is a nameless abstraction, we proceed much like in the previous case. Create an identifier for the parameter, create a constraint and map it to the expression, shift the referencing environment, recurse on the lambda expression's body, and unshift the referencing environment.
+- In the case where the expression is a named variable, we need to resolve the variable to an identifier. We lookup the referencing environment by name to see if the variable is bound or free. If it is bound, then we already have an identifier for it as defined in some parent lambda abstraction. If the variable is free, then we create a new identifier for it and immediately assign the variable's name as the name for the identifier. Next, we need to traverse all the parent binder expressions until we reach the binder for the variable (if one exists). For each binder, we mutably get the constraint mapped to it, and add the variable identifier to the set of restrictions. We have an early loop termination condition if we reach the binder for the variable, in which case we also update the `used` flag for it.
+- In the case where the expression is a nameless variable, we similarly need to resolve the variable to an identifier. We lookup the referencing environment by index using the stack of binders. Then, we get the constraint assigned to the binder, and extract the parameter identifier from it. Next, we iterate over the binders that are parent to the nameless variable up to but not including the variable's binder. For those sub-binders, we add the nameless variable to the set of restrictions. We simultaneously collect the set of parameters for the sub-binders we encounter along the way. Those additional restrictions have to be added to the set of restrictions for the nameless variable's binder.
+- In the case where the expression is an application, we simply recursively traverse the function sub-expression and its argument sub-expressions.
+
 ## Variable Name Generation
+
+Now let's brifely go over the implementation for the sequence of guesses for admissible variable names.
+To generate a fresh variable name, we need a mutable reference to the arena of strings since we're generating new strings and need to have them interned.
+We also need the set of claimed strings, meaning those variable names that cannot be used at the time the `fresh_name` function is called.
+
+For the sequence of variable names `x`, `y`, `z`, `x1`, `y1`, `z1`, etc. we store a vector of bases containing the names `x`, `y` and `z`.
+Then, we go into a loop where we build the next guess for a variable.
+We update the numeric suffix based on the number of attempts we've done so far.
+We know this loop must terminate since each attempt generates a different string from the ones we generated previously, and there are finitely many strings in the set `claimed`.
 
 ## Conversion to Named Representation
 
 ## Conclusion
 
+In conclusion, we've seen how to implement a sound fresh variable name generation algorithm for expressions in a lambda calculus having both named and unnamed variables.
+The approach we implemented relied on having a flat arena-based representation for the abstract syntax tree, such that we could easily map from binders to constraints.
+We formulated name generation as a constraint satisfaction problem, and implemented a two-phase algorithm that builds constraints and then selects parameter names satisfying those constraints.
+
 ## Future Work and Extensions
+
+This implementation was for a simple calculus by design.
+We could extend this in many ways to accomodate the requirements of more realistic programming languages.
+
+Specifically, we could extend the AST with a variant for referencing constants in namespaces.
+In that case, we would need to consider the first segment in fully qualified identifiers as an identifier appearing in the set of restrictions for parent binders.
+
+We could also improve the variable name selection using type information generated during type-checking.
+This would allow use to generate different kinds of names based on whether the variable stands for a function or a ground value.
+
+Similarly, we could extend the language with datatype declarations.
+We could then provide a mechanism for the user to specify a template for variable names for values of that type.
+
+Finally, we could keep track of the parameter names used for the parent binders when we generate a fresh variable name.
+This would allow us to add some form of constraint to discourage variable name shadowing.
+Indeed, our current algorithm will always use the first admissible parameter name, so shadowing is bound to occur more often.
+Discouraging that would improve the readability of output named expressions.
+
+## Outro
+
+Thanks for watching, and happy coding!
