@@ -933,7 +933,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     restrictions: _,
                     used: _,
                 } = self.constraints.get(binder).unwrap();
-                let identifier = self.identifiers.lookup(*parameter).unwrap();
+                let name = self.identifiers.lookup(*parameter).unwrap();
             }
         }
     }
@@ -957,8 +957,8 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                     restrictions: _,
                     used: _,
                 } = self.constraints.get(binder).unwrap();
-                let identifier = self.identifiers.lookup(*parameter).unwrap();
-                self.destination.variable(identifier)
+                let name = self.identifiers.lookup(*parameter).unwrap();
+                self.destination.variable(name)
             }
         }
     }

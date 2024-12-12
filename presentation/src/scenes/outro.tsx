@@ -1,5 +1,11 @@
 import { Layout, makeScene2D, Txt } from "@motion-canvas/2d";
-import { all, beginSlide, createRef } from "@motion-canvas/core";
+import {
+  all,
+  beginSlide,
+  createRef,
+  Direction,
+  slideTransition,
+} from "@motion-canvas/core";
 
 export default makeScene2D(function* (view) {
   const layout = createRef<Layout>();
@@ -18,6 +24,10 @@ export default makeScene2D(function* (view) {
       <Txt ref={text} fontFamily={"Roboto"} fill={"white"} fontSize={120} />
     </Layout>
   );
+
+  yield* slideTransition(Direction.Right);
+
+  yield* beginSlide("name-generation");
 
   yield* all(
     layout().opacity(1, 1),

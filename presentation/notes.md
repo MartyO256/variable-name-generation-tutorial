@@ -329,6 +329,31 @@ We know this loop must terminate since each attempt generates a different string
 
 ## Conversion to Named Representation
 
+We now have all the pieces required to select admissible parameter names.
+We'll traverse a source expression top-down and construct a destination expressionn.
+
+For this `NameGeneration` struct, we'll need:
+
+- the arena of strings
+- the arena of source expressions
+- the arena of destination expressions
+- the store of undetermined identifiers for parameter names and restrictions
+- the store of constraints on parameter names
+- the referencing environment to resolve named and unnamed variables to their binders, and finally
+- a variable name generator creating streams of strings.
+
+We start by defining a helper function to convert a set of identifiers into a set of strings.
+This will be necessary to evaluate the set of restrictions for a parameter into its corresponding set of inadmissible strings.
+
+Let's call our AST traversal function `convert_to_named`.
+We proceed by pattern-matching on the source expression.
+
+- In the case where the expression is an abstraction, we lookup the constraints mapped to it. Next we need to choose a name for the parameter. If the abstraction already had an initial string parameter, we need to check if we need to do a renaming. So, we lookup the restriction set and check if that initial parameter name is inadmissible. If it is, then we generate a new fresh name for it. Otherwise, we use the existing name. In both of these cases, we also update the identifier store to to reflect that we've chosen an name for that parameter. In the case where where the initial parameter was not named, we check whether the parameter is actually used. If it is, then we generate a fresh name and assign it to the parameter. If the parameter is not used, then we return `None` so that it is represented as an underscore. Now that we've chosen a parameter, we need to recursively convert the lambda abstraction's body. Like in the constraint store builder step, we update the state of the referencing environment accordingly. Note that since we're traversing the source expression, we introduce a binding for the original parameter name, such that when we lookup a source named variable, we can resolve it to the new parameter name.
+- In the case where the expression is a nameless abstraction, we proceed in a similar fashion as in the previous case. We lookup the constraints for the parameter name, then we check if the parameter is used. If it is, then we generate a fresh name for it. Otherwise, we'll use underscore as parameter name. We then recurse on the abstraction's body and construct the output named abstraction.
+- In the case where the expression is a named variable, we check using the referencing environment whether the variable is free or bound. If it is bound, then we lookup the value of the identifier, which was set when we selected parameter names for abstractions. If the variable is free, then by definition it does not have a corresponding binder, so we use its existing name.
+- In the case where the expression is a nameless variable, we simply lookup the variable's binder using the stack of binders and the variable's index. Then we lookup the parameter identifier assigned to that binder, evaluate the identifier to a string, and construct the named variable.
+- Finally, in the case where the expression is an application, we just recursively convert the function and argument sub-expressions to named representation and re-build an application.
+
 ## Conclusion
 
 In conclusion, we've seen how to implement a sound fresh variable name generation algorithm for expressions in a lambda calculus having both named and unnamed variables.
