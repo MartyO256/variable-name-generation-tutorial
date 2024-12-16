@@ -19,14 +19,13 @@ impl Expression {
         variable_name_generator: G,
     ) -> ExpressionId {
         let mut identifiers = IdentifierArena::new();
-        let constraints =
-            ConstraintStoreBuilder::new(expressions, &mut identifiers).build(expression);
+        let binders = BinderStoreBuilder::new(expressions, &mut identifiers).build(expression);
         NameGeneration::new(
             strings,
             expressions,
             destination,
             identifiers,
-            constraints,
+            binders,
             variable_name_generator,
         )
         .convert(expression)
@@ -55,16 +54,19 @@ struct IdentifierArena {
 }
 
 impl IdentifierArena {
+    #[inline]
     fn new() -> IdentifierArena {
         IdentifierArena {
             identifiers: Vec::new(),
         }
     }
 
+    #[inline]
     fn len(&self) -> usize {
         self.identifiers.len()
     }
 
+    #[inline]
     fn has(&self, id: IdentifierId) -> bool {
         id.into_usize() < self.len()
     }
@@ -75,11 +77,13 @@ impl IdentifierArena {
         IdentifierId::new(index)
     }
 
+    #[inline]
     fn lookup(&self, id: IdentifierId) -> Option<StringId> {
         debug_assert!(self.has(id));
         self.identifiers[id.into_usize()]
     }
 
+    #[inline]
     fn set(&mut self, id: IdentifierId, name: StringId) {
         debug_assert!(self.has(id));
         let previous = self.identifiers[id.into_usize()].replace(name);
@@ -87,49 +91,106 @@ impl IdentifierArena {
     }
 }
 
-struct Constraint {
-    parameter: IdentifierId,
-    restrictions: HashSet<IdentifierId>,
-    used: bool,
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+enum Constraint {
+    String(StringId),
+    Identifier(IdentifierId),
 }
 
 impl Constraint {
-    fn new(parameter: IdentifierId) -> Constraint {
-        Constraint {
+    #[inline]
+    fn new_string_constraint(string: StringId) -> Constraint {
+        Constraint::String(string)
+    }
+
+    #[inline]
+    fn new_identifier_constraint(identifier: IdentifierId) -> Constraint {
+        Constraint::Identifier(identifier)
+    }
+
+    #[inline]
+    fn evaluate(&self, identifiers: &IdentifierArena) -> Option<StringId> {
+        match self {
+            Constraint::Identifier(identifier) => identifiers.lookup(*identifier),
+            Constraint::String(string) => Option::Some(*string),
+        }
+    }
+}
+
+struct Binder {
+    parameter: IdentifierId,
+    restrictions: HashSet<Constraint>,
+    used: bool,
+}
+
+impl Binder {
+    #[inline]
+    fn new(parameter: IdentifierId) -> Binder {
+        Binder {
             parameter,
             restrictions: HashSet::new(),
             used: false,
         }
     }
+
+    #[inline]
+    fn is_used(&self) -> bool {
+        self.used
+    }
+
+    #[inline]
+    fn mark_used(&mut self) {
+        self.used = true;
+    }
+
+    #[inline]
+    fn add_restriction(&mut self, restriction: Constraint) {
+        self.restrictions.insert(restriction);
+    }
+
+    #[inline]
+    fn add_string_restriction(&mut self, restriction: StringId) {
+        self.add_restriction(Constraint::new_string_constraint(restriction));
+    }
+
+    #[inline]
+    fn add_identifier_restriction(&mut self, restriction: IdentifierId) {
+        self.add_restriction(Constraint::new_identifier_constraint(restriction));
+    }
 }
 
-struct ConstraintStore {
-    constraints: HashMap<ExpressionId, Constraint>,
+struct BinderStore {
+    binders: HashMap<ExpressionId, Binder>,
 }
 
-impl ConstraintStore {
-    fn new() -> ConstraintStore {
-        ConstraintStore {
-            constraints: HashMap::new(),
+impl BinderStore {
+    #[inline]
+    fn new() -> BinderStore {
+        BinderStore {
+            binders: HashMap::new(),
         }
     }
 
-    fn set(&mut self, expression: ExpressionId, constraint: Constraint) {
-        self.constraints.insert(expression, constraint);
+    #[inline]
+    fn set(&mut self, expression: ExpressionId, binder: Binder) {
+        self.binders.insert(expression, binder);
     }
 
-    fn get(&self, expression: ExpressionId) -> Option<&Constraint> {
-        self.constraints.get(&expression)
+    #[inline]
+    fn get(&self, expression: ExpressionId) -> Option<&Binder> {
+        self.binders.get(&expression)
     }
 
-    fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Constraint> {
-        self.constraints.get_mut(&expression)
+    #[inline]
+    fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Binder> {
+        self.binders.get_mut(&expression)
     }
 }
 
-impl Default for ConstraintStore {
-    fn default() -> ConstraintStore {
-        ConstraintStore::new()
+impl Default for BinderStore {
+    #[inline]
+    fn default() -> BinderStore {
+        BinderStore::new()
     }
 }
 
@@ -204,22 +265,23 @@ impl Default for ReferencingEnvironment {
     }
 }
 
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
+    #[inline]
     fn new(
         expressions: &'a ExpressionArena,
         identifiers: &'a mut IdentifierArena,
-    ) -> ConstraintStoreBuilder<'a> {
-        ConstraintStoreBuilder {
+    ) -> BinderStoreBuilder<'a> {
+        BinderStoreBuilder {
             expressions,
             identifiers,
-            constraints: ConstraintStore::default(),
+            binders: BinderStore::default(),
             environment: ReferencingEnvironment::default(),
         }
     }
@@ -229,71 +291,45 @@ impl<'a> ConstraintStoreBuilder<'a> {
             Expression::Variable {
                 identifier: variable,
             } => {
-                let identifier =
-                    if let Option::Some(identifier) = self.environment.lookup(*variable) {
-                        // `expression` is a bound variable
-                        identifier
-                    } else {
-                        // `expression` is a free variable
-                        let identifier = self.identifiers.new_identifier();
-                        self.identifiers.set(identifier, *variable);
-                        identifier
-                    };
-                for binder in self.environment.binders_iter() {
-                    let Constraint {
-                        parameter,
-                        restrictions,
-                        used,
-                    } = self.constraints.get_mut(*binder).unwrap();
-                    if *parameter == identifier {
-                        // Found the binder for bound variable `expression`
-                        *used = true;
-                        break;
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    // `expression` is a bound variable
+                    for binder_expression in self.environment.binders_iter() {
+                        let binder = self.binders.get_mut(*binder_expression).unwrap();
+                        if binder.parameter == identifier {
+                            // Found the binder for bound variable `expression`
+                            binder.mark_used();
+                            break;
+                        }
+                        binder.add_identifier_restriction(identifier);
                     }
-                    restrictions.insert(identifier);
-                }
+                } else {
+                    // `expression` is a free variable
+                    for binder in self.environment.binders_iter() {
+                        let binder = self.binders.get_mut(*binder).unwrap();
+                        binder.add_string_restriction(*variable);
+                    }
+                };
             }
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
-                let identifier = {
-                    let Constraint {
-                        parameter,
-                        restrictions: _,
-                        used: _,
-                    } = self.constraints.get(binder).unwrap();
-                    *parameter
-                };
+                let binder_expression = self.environment.lookup_binder(*index);
+                let binder_destination_parameter =
+                    self.binders.get(binder_expression).unwrap().parameter;
 
-                // Constraints to add to the binder for `expression`
-                let mut additional_restrictions = Vec::new();
-                for sub_binder in self.environment.binders_iter().take(index.into_usize() - 1) {
-                    let Constraint {
-                        parameter,
-                        restrictions,
-                        used: _,
-                    } = self.constraints.get_mut(*sub_binder).unwrap();
-
+                for sub_binder_expression in
+                    self.environment.binders_iter().take(index.into_usize() - 1)
+                {
+                    let sub_binder = self.binders.get_mut(*sub_binder_expression).unwrap();
                     // `sub_binder` can't use the same parameter as `binder`
-                    restrictions.insert(identifier);
-
-                    // `binder` can't use the same parameter as `sub_binder`
-                    additional_restrictions.push(*parameter);
+                    sub_binder.add_identifier_restriction(binder_destination_parameter);
                 }
 
-                let Constraint {
-                    parameter: _,
-                    restrictions,
-                    used,
-                } = self.constraints.get_mut(binder).unwrap();
-                *used = true;
-                for additional_restriction in additional_restrictions {
-                    restrictions.insert(additional_restriction);
-                }
+                let binder = self.binders.get_mut(binder_expression).unwrap();
+                binder.mark_used();
             }
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(parameter_identifier);
+                self.binders.set(expression, binder);
                 match parameter {
                     Option::Some(parameter) => {
                         self.environment
@@ -310,8 +346,8 @@ impl<'a> ConstraintStoreBuilder<'a> {
             }
             Expression::NamelessAbstraction { body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(parameter_identifier);
+                self.binders.set(expression, binder);
                 self.environment.shift(expression);
                 self.visit(*body);
                 self.environment.unshift();
@@ -328,9 +364,10 @@ impl<'a> ConstraintStoreBuilder<'a> {
         }
     }
 
-    fn build(mut self, expression: ExpressionId) -> ConstraintStore {
+    #[inline]
+    fn build(mut self, expression: ExpressionId) -> BinderStore {
         self.visit(expression);
-        self.constraints
+        self.binders
     }
 }
 
@@ -339,18 +376,19 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     source: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
     identifiers: IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
     variable_name_generator: G,
 }
 
 impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+    #[inline]
     fn new(
         strings: &'a mut StringArena,
         provider: &'a ExpressionArena,
         destination: &'a mut ExpressionArena,
         identifiers: IdentifierArena,
-        constraints: ConstraintStore,
+        binders: BinderStore,
         variable_name_generator: G,
     ) -> NameGeneration<'a, G> {
         NameGeneration {
@@ -358,17 +396,17 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
             source: provider,
             destination,
             identifiers,
-            constraints,
+            binders,
             environment: ReferencingEnvironment::default(),
             variable_name_generator,
         }
     }
 
-    fn lookup_restriction_set(&self, restrictions: &HashSet<IdentifierId>) -> HashSet<StringId> {
+    fn evaluate_restriction_set(&self, restrictions: &HashSet<Constraint>) -> HashSet<StringId> {
         let mut identifiers = HashSet::new();
         for restriction in restrictions {
-            if let Option::Some(identifier) = self.identifiers.lookup(*restriction) {
-                identifiers.insert(identifier);
+            if let Option::Some(string) = restriction.evaluate(&self.identifiers) {
+                identifiers.insert(string);
             }
         }
         identifiers
@@ -389,46 +427,38 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
             },
             Expression::NamelessVariable { index } => {
                 // `expression` is a bound nameless variable
-                let binder = self.environment.lookup_binder(*index);
-                let Constraint {
-                    parameter,
-                    restrictions: _,
-                    used: _,
-                } = self.constraints.get(binder).unwrap();
-                let identifier = self.identifiers.lookup(*parameter).unwrap();
+                let binder_expression = self.environment.lookup_binder(*index);
+                let binder = self.binders.get(binder_expression).unwrap();
+                let identifier = self.identifiers.lookup(binder.parameter).unwrap();
                 self.destination.variable(identifier)
             }
             Expression::Abstraction {
                 parameter: initial_parameter,
                 body,
             } => {
-                let Constraint {
-                    parameter,
-                    restrictions,
-                    used,
-                } = self.constraints.get(expression).unwrap();
+                let binder = self.binders.get(expression).unwrap();
                 let chosen_parameter = if let Option::Some(name) = initial_parameter {
                     // A parameter name already exists for `expression`
-                    let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                    let claimed_identifiers = self.evaluate_restriction_set(&binder.restrictions);
                     if claimed_identifiers.contains(name) {
                         // `initial_parameter` has to be renamed
                         let new_name = self
                             .variable_name_generator
                             .fresh_name(self.strings, &claimed_identifiers);
-                        self.identifiers.set(*parameter, new_name);
+                        self.identifiers.set(binder.parameter, new_name);
                         Option::Some(new_name)
                     } else {
                         // `initial_parameter` can be used as is
-                        self.identifiers.set(*parameter, *name);
+                        self.identifiers.set(binder.parameter, *name);
                         Option::Some(*name)
                     }
-                } else if *used {
+                } else if binder.is_used() {
                     // The parameter for `expression` is used in `body`
-                    let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                    let claimed_identifiers = self.evaluate_restriction_set(&binder.restrictions);
                     let name = self
                         .variable_name_generator
                         .fresh_name(self.strings, &claimed_identifiers);
-                    self.identifiers.set(*parameter, name);
+                    self.identifiers.set(binder.parameter, name);
                     Option::Some(name)
                 } else {
                     // The parameter for `expression` is never used in `body`
@@ -436,7 +466,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                 };
                 match initial_parameter {
                     Option::Some(name) => {
-                        self.environment.bind(*name, *parameter, expression);
+                        self.environment.bind(*name, binder.parameter, expression);
                         let named_body = self.convert_to_named(*body);
                         self.environment.unbind(*name);
                         self.destination.abstraction(chosen_parameter, named_body)
@@ -450,18 +480,14 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                 }
             }
             Expression::NamelessAbstraction { body } => {
-                let Constraint {
-                    parameter,
-                    restrictions,
-                    used,
-                } = self.constraints.get(expression).unwrap();
-                let parameter = if *used {
+                let binder = self.binders.get(expression).unwrap();
+                let parameter = if binder.is_used() {
                     // The parameter for `expression` is used in `body`
-                    let claimed_identifiers = self.lookup_restriction_set(restrictions);
+                    let claimed_identifiers = self.evaluate_restriction_set(&binder.restrictions);
                     let name = self
                         .variable_name_generator
                         .fresh_name(self.strings, &claimed_identifiers);
-                    self.identifiers.set(*parameter, name);
+                    self.identifiers.set(binder.parameter, name);
                     Option::Some(name)
                 } else {
                     // The parameter for `expression` is never used in `body`
@@ -488,6 +514,7 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         }
     }
 
+    #[inline]
     fn convert(mut self, expression: ExpressionId) -> ExpressionId {
         self.convert_to_named(expression)
     }
@@ -554,16 +581,20 @@ mod tests {
         test_alpha_equivalence_of_named_mixed_expression("λf. λ. λy. f 2 y");
         test_alpha_equivalence_of_named_mixed_expression("λf. λx. λ. f x 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λ. f x");
-        test_alpha_equivalence_of_named_mixed_expression("λx. λ. x x1 x2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λ. x y z 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λ. x 1");
         test_alpha_equivalence_of_named_mixed_expression("λ_. 1");
         test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. 1");
-        test_alpha_equivalence_of_named_mixed_expression("λx. λ_. λx1. 3 2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λ_. λy. 3 2 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λy. x 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λx. x 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λy. λx. x 3");
-        test_alpha_equivalence_of_named_mixed_expression("λx. (λy. λx. x 3) x");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λy. λx. x 3");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λx. λy. x 3");
         test_alpha_equivalence_of_named_mixed_expression("λ. λx. λ. 3 x 1");
+        test_alpha_equivalence_of_named_mixed_expression(
+            "λx. λx. 1 2 (λx. 1 2 3 (λx. 1 2 3 4 (λx. 1 2 3 4 5)))",
+        );
     }
 
     fn roundtrip_test(input: &str) {
