@@ -5,13 +5,13 @@ use std::{
 };
 
 use crate::{
+    admissible_variable_name_generator::AdmissibleVariableNameGenerator,
     expression::{DeBruijnIndex, Expression, ExpressionArena, ExpressionId},
-    fresh_variable_name_generators::FreshVariableNameGenerator,
     strings::{StringArena, StringId},
 };
 
 impl Expression {
-    pub fn convert_to_named<G: FreshVariableNameGenerator>(
+    pub fn convert_to_named<G: AdmissibleVariableNameGenerator>(
         strings: &mut StringArena,
         expressions: &ExpressionArena,
         expression: ExpressionId,
@@ -118,17 +118,21 @@ impl Constraint {
 }
 
 struct Binder {
-    parameter: IdentifierId,
+    source_parameter: Option<StringId>,
+    destination_parameter: IdentifierId,
     restrictions: HashSet<Constraint>,
+    undesirables: HashSet<Constraint>,
     used: bool,
 }
 
 impl Binder {
     #[inline]
-    fn new(parameter: IdentifierId) -> Binder {
+    fn new(source_parameter: Option<StringId>, destination_parameter: IdentifierId) -> Binder {
         Binder {
-            parameter,
+            source_parameter,
+            destination_parameter,
             restrictions: HashSet::new(),
+            undesirables: HashSet::new(),
             used: false,
         }
     }
@@ -156,6 +160,22 @@ impl Binder {
     #[inline]
     fn add_identifier_restriction(&mut self, restriction: IdentifierId) {
         self.add_restriction(Constraint::new_identifier_constraint(restriction));
+    }
+
+    #[inline]
+    fn add_avoid(&mut self, avoid: Constraint) {
+        self.restrictions.insert(avoid);
+    }
+
+    #[inline]
+    fn add_string_undesirable(&mut self, restriction: StringId) {
+        self.add_avoid(Constraint::new_string_constraint(restriction));
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    fn add_identifier_undesirable(&mut self, restriction: IdentifierId) {
+        self.add_avoid(Constraint::new_identifier_constraint(restriction));
     }
 }
 
@@ -293,12 +313,21 @@ impl<'a> BinderStoreBuilder<'a> {
             } => {
                 if let Option::Some(identifier) = self.environment.lookup(*variable) {
                     // `expression` is a bound variable
+                    // Constraints to add to the binder for `expression` to avoid unnecessary renamings
+                    let mut undesirables = Vec::new();
                     for binder_expression in self.environment.binders_iter() {
                         let binder = self.binders.get_mut(*binder_expression).unwrap();
-                        if binder.parameter == identifier {
+                        if binder.destination_parameter == identifier {
                             // Found the binder for bound variable `expression`
+                            for avoid in undesirables {
+                                binder.add_string_undesirable(avoid);
+                            }
                             binder.mark_used();
                             break;
+                        }
+                        if binder.source_parameter.is_some() {
+                            // If the binder for `expression` needs renaming, avoid this binder's given parameter name
+                            undesirables.push(binder.source_parameter.unwrap());
                         }
                         binder.add_identifier_restriction(identifier);
                     }
@@ -312,23 +341,38 @@ impl<'a> BinderStoreBuilder<'a> {
             }
             Expression::NamelessVariable { index } => {
                 let binder_expression = self.environment.lookup_binder(*index);
-                let binder_destination_parameter =
-                    self.binders.get(binder_expression).unwrap().parameter;
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = {
+                    let binder = self.binders.get(binder_expression).unwrap();
+                    (binder.source_parameter, binder.destination_parameter)
+                };
 
+                // Constraints to add to the binder for `expression` to avoid unnecessary renamings
+                let mut undesirables = Vec::new();
                 for sub_binder_expression in
                     self.environment.binders_iter().take(index.into_usize() - 1)
                 {
                     let sub_binder = self.binders.get_mut(*sub_binder_expression).unwrap();
+
                     // `sub_binder` can't use the same parameter as `binder`
-                    sub_binder.add_identifier_restriction(binder_destination_parameter);
+                    sub_binder.add_identifier_restriction(binder_destination_parameter_identifier);
+
+                    if sub_binder.source_parameter.is_some()
+                        && binder_source_parameter_name != sub_binder.source_parameter
+                    {
+                        // `binder` should avoid using the same parameter as `sub_binder`
+                        undesirables.push(sub_binder.source_parameter.unwrap());
+                    }
                 }
 
                 let binder = self.binders.get_mut(binder_expression).unwrap();
                 binder.mark_used();
+                for avoid in undesirables {
+                    binder.add_string_undesirable(avoid);
+                }
             }
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let binder = Binder::new(parameter_identifier);
+                let binder = Binder::new(*parameter, parameter_identifier);
                 self.binders.set(expression, binder);
                 match parameter {
                     Option::Some(parameter) => {
@@ -346,7 +390,7 @@ impl<'a> BinderStoreBuilder<'a> {
             }
             Expression::NamelessAbstraction { body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let binder = Binder::new(parameter_identifier);
+                let binder = Binder::new(Option::None, parameter_identifier);
                 self.binders.set(expression, binder);
                 self.environment.shift(expression);
                 self.visit(*body);
@@ -371,7 +415,7 @@ impl<'a> BinderStoreBuilder<'a> {
     }
 }
 
-struct NameGeneration<'a, G: FreshVariableNameGenerator> {
+struct NameGeneration<'a, G: AdmissibleVariableNameGenerator> {
     strings: &'a mut StringArena,
     source: &'a ExpressionArena,
     destination: &'a mut ExpressionArena,
@@ -381,7 +425,7 @@ struct NameGeneration<'a, G: FreshVariableNameGenerator> {
     variable_name_generator: G,
 }
 
-impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
+impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
     #[inline]
     fn new(
         strings: &'a mut StringArena,
@@ -402,10 +446,10 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
         }
     }
 
-    fn evaluate_restriction_set(&self, restrictions: &HashSet<Constraint>) -> HashSet<StringId> {
+    fn evaluate_constraint_set(&self, constraints: &HashSet<Constraint>) -> HashSet<StringId> {
         let mut identifiers = HashSet::new();
-        for restriction in restrictions {
-            if let Option::Some(string) = restriction.evaluate(&self.identifiers) {
+        for constraint in constraints {
+            if let Option::Some(string) = constraint.evaluate(&self.identifiers) {
                 identifiers.insert(string);
             }
         }
@@ -429,44 +473,54 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                 // `expression` is a bound nameless variable
                 let binder_expression = self.environment.lookup_binder(*index);
                 let binder = self.binders.get(binder_expression).unwrap();
-                let identifier = self.identifiers.lookup(binder.parameter).unwrap();
+                let identifier = self
+                    .identifiers
+                    .lookup(binder.destination_parameter)
+                    .unwrap();
                 self.destination.variable(identifier)
             }
             Expression::Abstraction {
-                parameter: initial_parameter,
+                parameter: source_parameter,
                 body,
             } => {
                 let binder = self.binders.get(expression).unwrap();
-                let chosen_parameter = if let Option::Some(name) = initial_parameter {
+                let chosen_parameter = if let Option::Some(name) = source_parameter {
                     // A parameter name already exists for `expression`
-                    let claimed_identifiers = self.evaluate_restriction_set(&binder.restrictions);
-                    if claimed_identifiers.contains(name) {
+                    let restrictions = self.evaluate_constraint_set(&binder.restrictions);
+                    if restrictions.contains(name) {
                         // `initial_parameter` has to be renamed
+                        let undesirables = self.evaluate_constraint_set(&binder.undesirables);
                         let new_name = self
                             .variable_name_generator
-                            .fresh_name(self.strings, &claimed_identifiers);
-                        self.identifiers.set(binder.parameter, new_name);
+                            .generate_admissible_name(self.strings, |name| {
+                                !restrictions.contains(&name) && !undesirables.contains(&name)
+                            });
+                        self.identifiers.set(binder.destination_parameter, new_name);
                         Option::Some(new_name)
                     } else {
                         // `initial_parameter` can be used as is
-                        self.identifiers.set(binder.parameter, *name);
+                        self.identifiers.set(binder.destination_parameter, *name);
                         Option::Some(*name)
                     }
                 } else if binder.is_used() {
                     // The parameter for `expression` is used in `body`
-                    let claimed_identifiers = self.evaluate_restriction_set(&binder.restrictions);
+                    let restrictions = self.evaluate_constraint_set(&binder.restrictions);
+                    let undesirables = self.evaluate_constraint_set(&binder.undesirables);
                     let name = self
                         .variable_name_generator
-                        .fresh_name(self.strings, &claimed_identifiers);
-                    self.identifiers.set(binder.parameter, name);
+                        .generate_admissible_name(self.strings, |name| {
+                            !restrictions.contains(&name) && !undesirables.contains(&name)
+                        });
+                    self.identifiers.set(binder.destination_parameter, name);
                     Option::Some(name)
                 } else {
                     // The parameter for `expression` is never used in `body`
                     Option::None
                 };
-                match initial_parameter {
+                match source_parameter {
                     Option::Some(name) => {
-                        self.environment.bind(*name, binder.parameter, expression);
+                        self.environment
+                            .bind(*name, binder.destination_parameter, expression);
                         let named_body = self.convert_to_named(*body);
                         self.environment.unbind(*name);
                         self.destination.abstraction(chosen_parameter, named_body)
@@ -483,11 +537,14 @@ impl<'a, G: FreshVariableNameGenerator> NameGeneration<'a, G> {
                 let binder = self.binders.get(expression).unwrap();
                 let parameter = if binder.is_used() {
                     // The parameter for `expression` is used in `body`
-                    let claimed_identifiers = self.evaluate_restriction_set(&binder.restrictions);
+                    let restrictions = self.evaluate_constraint_set(&binder.restrictions);
+                    let undesirables = self.evaluate_constraint_set(&binder.undesirables);
                     let name = self
                         .variable_name_generator
-                        .fresh_name(self.strings, &claimed_identifiers);
-                    self.identifiers.set(binder.parameter, name);
+                        .generate_admissible_name(self.strings, |name| {
+                            !restrictions.contains(&name) && !undesirables.contains(&name)
+                        });
+                    self.identifiers.set(binder.destination_parameter, name);
                     Option::Some(name)
                 } else {
                     // The parameter for `expression` is never used in `body`
@@ -528,7 +585,7 @@ mod tests {
     use rand::{thread_rng, Rng};
 
     use crate::{
-        fresh_variable_name_generators::VariableNameGenerator,
+        admissible_variable_name_generator::VariableNameGenerator,
         referencing_environment::ReferencingEnvironment,
     };
 
@@ -568,6 +625,12 @@ mod tests {
                 named_expression
             )
         ));
+
+        println!(
+            "{} => {}",
+            input,
+            Expression::to_string(&strings, &named_expressions, 80, named_expression).unwrap()
+        );
     }
 
     #[test]
@@ -585,6 +648,13 @@ mod tests {
         test_alpha_equivalence_of_named_mixed_expression("λx. λ. x 1");
         test_alpha_equivalence_of_named_mixed_expression("λ_. 1");
         test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. 1");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. 2");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. λ_. 2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. λ_. 3 2");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. λ_. 3 2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λx. λ_. λ_. 3 2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λx. λ_. 3 2 1");
+        test_alpha_equivalence_of_named_mixed_expression("λ_. λ_. λx. 3 2 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λ_. λy. 3 2 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λy. x 1");
         test_alpha_equivalence_of_named_mixed_expression("λx. λx. x 1");
@@ -645,8 +715,13 @@ mod tests {
         roundtrip_test("λy. x");
         roundtrip_test("λx. λy. x");
         roundtrip_test("λx. λy. y");
+        roundtrip_test("λf. λx. λy. f (λx. f x y) x");
         roundtrip_test("λf. λx. λy. f x");
         roundtrip_test("λf. λx. λy. f x y");
+        roundtrip_test("λf. λy. f x y");
+        roundtrip_test("λf. λx. f x y");
+        roundtrip_test("λx. λy. f x y");
+        roundtrip_test("f x y");
     }
 
     fn fuzz_test<R: Rng>(rng: &mut R, max_depth: usize) {

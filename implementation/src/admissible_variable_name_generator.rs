@@ -1,9 +1,11 @@
-use std::collections::HashSet;
-
 use crate::strings::{StringArena, StringId};
 
-pub trait FreshVariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
+pub trait AdmissibleVariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId;
 }
 
 pub struct VariableNameGenerator {
@@ -32,8 +34,12 @@ impl Default for VariableNameGenerator {
     }
 }
 
-impl FreshVariableNameGenerator for VariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId {
+impl AdmissibleVariableNameGenerator for VariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId {
         let n = self.bases.len();
         let mut attempts = 0;
         let mut suffix = 0;
@@ -43,7 +49,7 @@ impl FreshVariableNameGenerator for VariableNameGenerator {
                 candidate.extend(suffix.to_string().as_bytes());
             }
             let id = strings.intern(&candidate);
-            if !claimed.contains(&id) {
+            if is_admissible(id) {
                 return id;
             }
             attempts += 1;
@@ -56,6 +62,8 @@ impl FreshVariableNameGenerator for VariableNameGenerator {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::*;
 
     #[test]
@@ -78,7 +86,8 @@ mod tests {
             strings.intern(b"y2"),
             strings.intern(b"z2"),
         ] {
-            let actual = generator.fresh_name(&mut strings, &claimed);
+            let actual = generator
+                .generate_admissible_name(&mut strings, |string| !claimed.contains(&string));
             assert!(!claimed.contains(&actual));
             assert!(expected == actual);
             claimed.insert(actual);
