@@ -45,14 +45,14 @@ impl StringArena {
     }
 
     #[inline]
-    pub fn get(&self, reference: StringId) -> &[u8] {
-        debug_assert!(self.has(reference));
-        &self.strings[reference.into_usize()]
+    pub fn get(&self, id: StringId) -> &[u8] {
+        debug_assert!(self.has(id));
+        &self.strings[id.into_usize()]
     }
 
     #[inline]
-    pub fn has(&self, reference: StringId) -> bool {
-        reference.into_usize() < self.len()
+    pub fn has(&self, id: StringId) -> bool {
+        id.into_usize() < self.len()
     }
 
     #[inline]

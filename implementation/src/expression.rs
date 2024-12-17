@@ -2,21 +2,34 @@ use std::ops::Index;
 
 use crate::strings::StringId;
 
+/// De Bruijn indices denoting the distance between a nameless variable and its
+/// binder. These indices start at 1.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct DeBruijnIndex {
     index: usize,
 }
 
+/// Contiguous store of [expressions](Expression) backed by a vector.
 #[derive(Debug)]
 pub struct ExpressionArena {
     expressions: Vec<Expression>,
 }
 
+/// Expression IDs as indices in [expression arenas](ExpressionArena).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct ExpressionId {
     index: usize,
 }
 
+/// Expressions in mixed representation. This is a flat data implementation for
+/// abstract syntax trees.
+///
+/// These expressions may contain named (free or bound) and nameless variables,
+/// named and nameless lambda abstractions, and applications.
+///
+/// To support annotating expressions with auxiliary data, expressions are
+/// constructed and stored in [expression arenas](ExpressionArena). As such,
+/// expressions are [referred to by ID](ExpressionId) within an arena.
 #[derive(Debug)]
 pub enum Expression {
     Variable {
@@ -41,6 +54,7 @@ pub enum Expression {
 impl DeBruijnIndex {
     #[inline]
     pub fn new(index: usize) -> DeBruijnIndex {
+        debug_assert!(index > 0);
         DeBruijnIndex { index }
     }
 
@@ -77,6 +91,7 @@ impl ExpressionId {
 }
 
 impl ExpressionArena {
+    /// Creates a new empty expression arena.
     #[inline]
     pub fn new() -> ExpressionArena {
         ExpressionArena {
@@ -84,6 +99,7 @@ impl ExpressionArena {
         }
     }
 
+    /// Creates an empty expression arena with at least the specified capacity.
     #[inline]
     pub fn with_capacity(capacity: usize) -> ExpressionArena {
         ExpressionArena {
@@ -91,12 +107,17 @@ impl ExpressionArena {
         }
     }
 
+    /// Retrieves the expression with the corresponding ID in the expression
+    /// arena. It is assumed that the expression arena has sufficiently many
+    /// expressions in it for the ID to be included in it.
     #[inline]
-    pub fn get(&self, reference: ExpressionId) -> &Expression {
-        debug_assert!(self.has(reference));
-        &self.expressions[reference.into_usize()]
+    pub fn get(&self, id: ExpressionId) -> &Expression {
+        debug_assert!(self.has(id));
+        &self.expressions[id.into_usize()]
     }
 
+    /// Adds the given expression to the expression arena, and returns that
+    /// expression's ID to retrieve it from the expression arena.
     pub fn add(&mut self, e: Expression) -> ExpressionId {
         let i = ExpressionId::new(self.expressions.len());
         self.expressions.push(e);
@@ -104,8 +125,8 @@ impl ExpressionArena {
     }
 
     #[inline]
-    pub fn has(&self, reference: ExpressionId) -> bool {
-        reference.into_usize() < self.len()
+    pub fn has(&self, id: ExpressionId) -> bool {
+        id.into_usize() < self.len()
     }
 
     #[inline]
@@ -118,26 +139,36 @@ impl ExpressionArena {
         self.expressions.is_empty()
     }
 
+    /// Constructs a variable with the given identifier and adds it to the
+    /// expression arena.
     #[inline]
     pub fn variable(&mut self, identifier: StringId) -> ExpressionId {
         self.add(Expression::Variable { identifier })
     }
 
+    /// Constructs a nameless variable with the given de Bruijn index and adds
+    /// it to the expression arena.
     #[inline]
     pub fn nameless_variable(&mut self, index: DeBruijnIndex) -> ExpressionId {
         self.add(Expression::NamelessVariable { index })
     }
 
+    /// Constructs a lambda abstraction with the given parameter and body
+    /// expression and adds it to the expression arena.
     #[inline]
     pub fn abstraction(&mut self, parameter: Option<StringId>, body: ExpressionId) -> ExpressionId {
         self.add(Expression::Abstraction { parameter, body })
     }
 
+    /// Constructs a nameless lambda abstraction with the given body expression
+    /// and adds it to the expression arena.
     #[inline]
     pub fn nameless_abstraction(&mut self, body: ExpressionId) -> ExpressionId {
         self.add(Expression::NamelessAbstraction { body })
     }
 
+    /// Constructs an application with the given function and arguments
+    /// sub-expressions and adds it to the expression arena.
     #[inline]
     pub fn application(
         &mut self,
