@@ -114,6 +114,7 @@ export default makeScene2D(function* (view) {
   );
 
   const cursor2 = createRef<Polygon>();
+  const cursor2Set = createRef<Latex>();
   view.add(
     <Polygon
       ref={cursor2}
@@ -124,7 +125,16 @@ export default makeScene2D(function* (view) {
       opacity={0}
       x={cursor2X}
       y={cursor2Y}
-    />
+    >
+      <Latex
+        ref={cursor2Set}
+        fill="cyan"
+        fontSize={50}
+        tex={["\\{", "\\}"]}
+        rotation={180}
+        y={100}
+      />
+    </Polygon>
   );
 
   yield* cursor1().opacity(1, 1);
@@ -228,13 +238,21 @@ export default makeScene2D(function* (view) {
 
   yield* constraints2().tex(["\\{", "u_1", "\\}"], 1);
 
+  yield* cursor2Set().tex(["\\{", "u_2", "\\}"], 1);
+
   yield* beginSlide("worked-example");
 
   yield* cursor2X(unwrap<number>(lambda1Layout().x), 1);
 
   yield* beginSlide("worked-example");
 
-  yield* all(cursor2().opacity(0, 1), lambda1().fill("white", 1));
+  yield* constraints1().tex(["\\{", "u_2", "\\}"], 1);
+
+  yield* all(
+    cursor2().opacity(0, 1),
+    lambda1().fill("white", 1),
+    cursor2Set().tex(["\\{", "\\}"], 1)
+  );
 
   yield* used1().text("", 0.5);
   yield* used1().text("Used", 0.5);
@@ -305,6 +323,7 @@ export default makeScene2D(function* (view) {
 
   yield* all(
     u2().tex(["y"], 1),
+    constraints1().tex(["\\{", "y", "\\}"], 1),
     lambda2().tex(["\\vphantom{(}\\lambda{}", "y", "."], 1)
   );
 

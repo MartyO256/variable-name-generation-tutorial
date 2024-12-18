@@ -102,6 +102,7 @@ export default makeScene2D(function* (view) {
   );
 
   const cursor2 = createRef<Polygon>();
+  const cursor2Set = createRef<Latex>();
   view.add(
     <Polygon
       ref={cursor2}
@@ -112,7 +113,16 @@ export default makeScene2D(function* (view) {
       opacity={0}
       x={cursor2X}
       y={cursor2Y}
-    />
+    >
+      <Latex
+        ref={cursor2Set}
+        fill="cyan"
+        fontSize={50}
+        tex={["\\{", "\\}"]}
+        rotation={180}
+        y={100}
+      />
+    </Polygon>
   );
 
   yield* cursor1().opacity(1, 1);

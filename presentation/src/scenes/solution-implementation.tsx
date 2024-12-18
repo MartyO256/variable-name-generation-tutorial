@@ -11,6 +11,7 @@ export default makeScene2D(function* (view) {
   const step2 = createRef<Txt>();
   const step3 = createRef<Txt>();
   const step4 = createRef<Txt>();
+  const note = createRef<Txt>();
 
   view.add(
     <Layout direction={"column"} gap={40} width={1920} padding={100} layout>
@@ -29,6 +30,16 @@ export default makeScene2D(function* (view) {
       </Txt>
       <Txt ref={step4} fontFamily={"Roboto"} fill={"white"} opacity={0.1}>
         4. Traverse the input expression and choose admissible parameter names
+      </Txt>
+      <Txt
+        ref={note}
+        fontFamily={"Roboto"}
+        fill={"cyan"}
+        opacity={0.1}
+        textWrap={true}
+      >
+        The order in which parameter names are decided affects only the visual
+        appeal of the result
       </Txt>
     </Layout>
   );
@@ -50,6 +61,10 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("solution-implementation");
 
   yield* step4().opacity(1, 1);
+
+  yield* beginSlide("solution-implementation");
+
+  yield* note().opacity(1, 1);
 
   yield* beginSlide("solution-implementation");
 });
