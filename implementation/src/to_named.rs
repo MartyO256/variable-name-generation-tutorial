@@ -163,19 +163,19 @@ impl Binder {
     }
 
     #[inline]
-    fn add_avoid(&mut self, avoid: Constraint) {
-        self.restrictions.insert(avoid);
+    fn add_undesirable(&mut self, undesirable: Constraint) {
+        self.undesirables.insert(undesirable);
     }
 
     #[inline]
-    fn add_string_undesirable(&mut self, restriction: StringId) {
-        self.add_avoid(Constraint::new_string_constraint(restriction));
+    fn add_string_undesirable(&mut self, undesirable: StringId) {
+        self.add_undesirable(Constraint::new_string_constraint(undesirable));
     }
 
     #[inline]
     #[allow(dead_code)]
-    fn add_identifier_undesirable(&mut self, restriction: IdentifierId) {
-        self.add_avoid(Constraint::new_identifier_constraint(restriction));
+    fn add_identifier_undesirable(&mut self, undesirable: IdentifierId) {
+        self.add_undesirable(Constraint::new_identifier_constraint(undesirable));
     }
 }
 
@@ -625,12 +625,6 @@ mod tests {
                 named_expression
             )
         ));
-
-        println!(
-            "{} => {}",
-            input,
-            Expression::to_string(&strings, &named_expressions, 80, named_expression).unwrap()
-        );
     }
 
     #[test]

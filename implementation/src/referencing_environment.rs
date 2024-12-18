@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{hash_map::Entry, HashMap, HashSet},
     rc::Rc,
 };
 
@@ -76,12 +76,14 @@ impl ReferencingEnvironment {
     }
 
     pub fn bind(&mut self, identifier: StringId) {
-        if let Option::Some(stack) = self.bindings_map.get_mut(&identifier) {
-            stack.push(self.size);
-        } else {
-            let stack = vec![self.size];
-            self.bindings_map.insert(identifier, stack);
-        }
+        match self.bindings_map.entry(identifier) {
+            Entry::Occupied(mut stack) => {
+                stack.get_mut().push(self.size);
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(vec![self.size]);
+            }
+        };
         self.shift();
     }
 
