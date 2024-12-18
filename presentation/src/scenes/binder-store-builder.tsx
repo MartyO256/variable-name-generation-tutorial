@@ -34,7 +34,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* slideTransition(Direction.Right);
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -53,7 +53,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -95,7 +95,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -118,7 +118,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -143,7 +143,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -173,7 +173,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -206,7 +206,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -262,7 +262,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -294,7 +294,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -336,7 +336,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -359,7 +359,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -384,7 +384,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -412,7 +412,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -456,7 +456,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -486,7 +486,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -518,7 +518,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -569,7 +569,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -603,7 +603,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -645,7 +645,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -668,7 +668,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -699,7 +699,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -753,7 +753,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -787,7 +787,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -844,7 +844,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -889,7 +889,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 
   yield* code().code(
     `\
@@ -918,5 +918,5 @@ impl<'a> ConstraintStoreBuilder<'a> {
     1
   );
 
-  yield* beginSlide("constraint-store-builder");
+  yield* beginSlide("binder-store-builder");
 });

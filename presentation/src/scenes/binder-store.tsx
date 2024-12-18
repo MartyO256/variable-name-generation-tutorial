@@ -37,7 +37,7 @@ impl ConstraintStore {
 
   yield* slideTransition(Direction.Right);
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("binder-store");
 
   yield* code().code(
     `\
@@ -63,7 +63,7 @@ impl ConstraintStore {
     1
   );
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("binder-store");
 
   yield* code().code(
     `\
@@ -89,5 +89,5 @@ impl ConstraintStore {
     1
   );
 
-  yield* beginSlide("constraint-store");
+  yield* beginSlide("binder-store");
 });

@@ -2,6 +2,8 @@
 node_modules
 output
 dist
+audio
+video
 
 # Editor directories and files
 .vscode/*
