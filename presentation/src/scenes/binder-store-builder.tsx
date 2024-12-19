@@ -19,14 +19,14 @@ export default makeScene2D(function* (view) {
       width={1920}
       padding={100}
       code={`\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
 
 }`}
     />
@@ -38,14 +38,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         
     }
@@ -57,14 +57,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
         
@@ -76,14 +76,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
@@ -99,14 +99,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
@@ -122,20 +122,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(*parameter, parameter_identifier);
+                self.binders.set(expression, binder);
             }
         }
     }
@@ -147,20 +147,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(*parameter, parameter_identifier);
+                self.binders.set(expression, binder);
                 match parameter {
                     Option::Some(parameter) => {
                         
@@ -177,20 +177,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(*parameter, parameter_identifier);
+                self.binders.set(expression, binder);
                 match parameter {
                     Option::Some(parameter) => {
                         self.environment
@@ -210,20 +210,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(*parameter, parameter_identifier);
+                self.binders.set(expression, binder);
                 match parameter {
                     
                 }
@@ -236,20 +236,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(*parameter, parameter_identifier);
+                self.binders.set(expression, binder);
                 match parameter {
                     Option::None => {
                     
@@ -266,20 +266,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Abstraction { parameter, body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(*parameter, parameter_identifier);
+                self.binders.set(expression, binder);
                 match parameter {
                     Option::None => {
                         self.environment.shift(expression);
@@ -298,14 +298,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             
@@ -317,14 +317,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessAbstraction { body } => {
@@ -340,14 +340,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessAbstraction { body } => {
@@ -363,20 +363,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessAbstraction { body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(Option::None, parameter_identifier);
+                self.binders.set(expression, binder);
             }
         }
     }
@@ -388,20 +388,20 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
+struct BinderStoreBuilder<'a> {
     expressions: &'a ExpressionArena,
     identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
+    binders: BinderStore,
     environment: ReferencingEnvironment,
 }
 
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessAbstraction { body } => {
                 let parameter_identifier = self.identifiers.new_identifier();
-                let constraint = Constraint::new(parameter_identifier);
-                self.constraints.set(expression, constraint);
+                let binder = Binder::new(Option::None, parameter_identifier);
+                self.binders.set(expression, binder);
                 self.environment.shift(expression);
                 self.visit(*body);
                 self.environment.unshift();
@@ -416,14 +416,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
         
@@ -435,14 +428,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable {
@@ -460,107 +446,16 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable {
                 identifier: variable,
             } => {
-                let identifier =
-                    if let Option::Some(identifier) = self.environment.lookup(*variable) {
-                        
-                    } else {
-                        
-                    };
-            }
-        }
-    }
-}`,
-    1
-  );
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                
+                } else {
 
-  yield* beginSlide("binder-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Variable {
-                identifier: variable,
-            } => {
-                let identifier =
-                    if let Option::Some(identifier) = self.environment.lookup(*variable) {
-                        identifier
-                    } else {
-                        let identifier = self.identifiers.new_identifier();
-                        self.identifiers.set(identifier, *variable);
-                        identifier
-                    };
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* beginSlide("binder-store-builder");
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Variable {
-                identifier: variable,
-            } => {
-                let identifier = /* ... */;
-            }
-        }
-    }
-}`,
-    1
-  );
-
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::Variable {
-                identifier: variable,
-            } => {
-                let identifier = /* ... */;
-                for binder in self.environment.binders_iter() {
-                    
                 }
             }
         }
@@ -573,28 +468,19 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Variable {
                 identifier: variable,
             } => {
-                let identifier = /* ... */;
-                for binder in self.environment.binders_iter() {
-                    let Constraint { parameter, restrictions, used } =
-                        self.constraints.get_mut(*binder).unwrap();
-                    if *parameter == identifier {
-                        *used = true;
-                        break;
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    let mut undesirables = Vec::new();
+                    for binder_expression in self.environment.binders_iter() {
+                        
                     }
-                    restrictions.insert(identifier);
+                } else {
+
                 }
             }
         }
@@ -607,14 +493,172 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    let mut undesirables = Vec::new();
+                    for binder_expression in self.environment.binders_iter() {
+                        let binder = self.binders.get_mut(*binder_expression).unwrap();
+                        if binder.destination_parameter == identifier {
+                            
+                        }
+                    }
+                } else {
 
-impl<'a> ConstraintStoreBuilder<'a> {
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    let mut undesirables = Vec::new();
+                    for binder_expression in self.environment.binders_iter() {
+                        let binder = self.binders.get_mut(*binder_expression).unwrap();
+                        if binder.destination_parameter == identifier {
+                            for avoid in undesirables {
+                                binder.add_string_undesirable(avoid);
+                            }
+                            binder.mark_used();
+                            break;
+                        }
+                    }
+                } else {
+
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    let mut undesirables = Vec::new();
+                    for binder_expression in self.environment.binders_iter() {
+                        let binder = self.binders.get_mut(*binder_expression).unwrap();
+                        if binder.destination_parameter == identifier {
+                            for avoid in undesirables {
+                                binder.add_string_undesirable(avoid);
+                            }
+                            binder.mark_used();
+                            break;
+                        }
+                        if binder.source_parameter.is_some() {
+                            undesirables.push(binder.source_parameter.unwrap());
+                        }
+                        binder.add_identifier_restriction(identifier);
+                    }
+                } else {
+
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    // ...
+                } else {
+
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    // ...
+                } else {
+                    for binder in self.environment.binders_iter() {
+                
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::Variable {
+                identifier: variable,
+            } => {
+                if let Option::Some(identifier) = self.environment.lookup(*variable) {
+                    // ...
+                } else {
+                    for binder in self.environment.binders_iter() {
+                        let binder = self.binders.get_mut(*binder).unwrap();
+                        binder.add_string_restriction(*variable);
+                    }
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             
@@ -626,14 +670,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
@@ -649,14 +686,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
@@ -672,25 +702,14 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
                 let binder = self.environment.lookup_binder(*index);
-                let identifier = {
-                    let Constraint {
-                        parameter,
-                        restrictions: _,
-                        used: _,
-                    } = self.constraints.get(binder).unwrap();
-                    *parameter
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = {
+                    let binder = self.binders.get(binder_expression).unwrap();
+                    (binder.source_parameter, binder.destination_parameter)
                 };
             }
         }
@@ -703,19 +722,12 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
                 let binder = self.environment.lookup_binder(*index);
-                let identifier = /* ... */;
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
             }
         }
     }
@@ -725,26 +737,35 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
                 let binder = self.environment.lookup_binder(*index);
-                let identifier = /* ... */;
-                for sub_binder in self.environment.binders_iter().take(index.into_usize() - 1) {
-                    let Constraint {
-                        parameter,
-                        restrictions,
-                        used: _,
-                    } = self.constraints.get_mut(*sub_binder).unwrap();
-                    restrictions.insert(identifier);
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
+                let mut undesirables = Vec::new();
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
+                let mut undesirables = Vec::new();
+                for sub_binder_expression in
+                    self.environment.binders_iter().take(index.into_usize() - 1)
+                {
+                    let sub_binder = self.binders.get_mut(*sub_binder_expression).unwrap();
                 }
             }
         }
@@ -757,28 +778,19 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
                 let binder = self.environment.lookup_binder(*index);
-                let identifier = /* ... */;
-                let mut additional_restrictions = Vec::new();
-                for sub_binder in self.environment.binders_iter().take(index.into_usize() - 1) {
-                    let Constraint {
-                        parameter,
-                        restrictions,
-                        used: _,
-                    } = self.constraints.get_mut(*sub_binder).unwrap();
-                    restrictions.insert(identifier);
-                    additional_restrictions.push(*parameter);
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
+                let mut undesirables = Vec::new();
+                for sub_binder_expression in
+                    self.environment.binders_iter().take(index.into_usize() - 1)
+                {
+                    let sub_binder = self.binders.get_mut(*sub_binder_expression).unwrap();
+
+                    sub_binder.add_identifier_restriction(binder_destination_parameter_identifier);
                 }
             }
         }
@@ -791,51 +803,25 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
                 let binder = self.environment.lookup_binder(*index);
-                let identifier = /* ... */;
-                let additional_restrictions = /* ... */;
-            }
-        }
-    }
-}`,
-    1
-  );
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
+                let mut undesirables = Vec::new();
+                for sub_binder_expression in
+                    self.environment.binders_iter().take(index.into_usize() - 1)
+                {
+                    let sub_binder = self.binders.get_mut(*sub_binder_expression).unwrap();
 
-  yield* code().code(
-    `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
+                    sub_binder.add_identifier_restriction(binder_destination_parameter_identifier);
 
-impl<'a> ConstraintStoreBuilder<'a> {
-    fn visit(&mut self, expression: ExpressionId) {
-        match &self.expressions[expression] {
-            Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
-                let identifier = /* ... */;
-                let additional_restrictions = /* ... */;
-                let Constraint {
-                    parameter: _,
-                    restrictions,
-                    used,
-                } = self.constraints.get_mut(binder).unwrap();
-                *used = true;
-                for additional_restriction in additional_restrictions {
-                    restrictions.insert(additional_restriction);
+                    if sub_binder.source_parameter.is_some()
+                        && binder_source_parameter_name != sub_binder.source_parameter
+                    {
+                        undesirables.push(sub_binder.source_parameter.unwrap());
+                    }
                 }
             }
         }
@@ -848,14 +834,46 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
+                let mut undesirables = /* ... */;
+            }
+        }
+    }
+}`,
+    1
+  );
 
-impl<'a> ConstraintStoreBuilder<'a> {
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
+    fn visit(&mut self, expression: ExpressionId) {
+        match &self.expressions[expression] {
+            Expression::NamelessVariable { index } => {
+                let binder = self.environment.lookup_binder(*index);
+                let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
+                let mut undesirables = /* ... */;
+                let binder = self.binders.get_mut(binder_expression).unwrap();
+                binder.mark_used();
+                for undesirable in undesirables {
+                    binder.add_string_undesirable(undesirable);
+                }
+            }
+        }
+    }
+}`,
+    1
+  );
+
+  yield* beginSlide("binder-store-builder");
+
+  yield* code().code(
+    `\
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             
@@ -867,14 +885,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Application {
@@ -893,14 +904,7 @@ impl<'a> ConstraintStoreBuilder<'a> {
 
   yield* code().code(
     `\
-struct ConstraintStoreBuilder<'a> {
-    expressions: &'a ExpressionArena,
-    identifiers: &'a mut IdentifierArena,
-    constraints: ConstraintStore,
-    environment: ReferencingEnvironment,
-}
-
-impl<'a> ConstraintStoreBuilder<'a> {
+impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::Application {

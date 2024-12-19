@@ -17,6 +17,7 @@ import expressionArenaExample from "./scenes/expression-arena-example?scene";
 import expressionArenaCaveat from "./scenes/expression-arena-caveat?scene";
 import identifierArena from "./scenes/identifier-arena?scene";
 import referencingEnvironment from "./scenes/referencing-environment?scene";
+import binder from "./scenes/binder?scene";
 import binderStore from "./scenes/binder-store?scene";
 import binderStoreBuilder from "./scenes/binder-store-builder?scene";
 import variableGenerator from "./scenes/variable-generator?scene";
@@ -47,6 +48,7 @@ export default makeProject({
     expressionArenaCaveat,
     identifierArena,
     referencingEnvironment,
+    binder,
     binderStore,
     binderStoreBuilder,
     variableGenerator,

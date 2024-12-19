@@ -19,17 +19,11 @@ export default makeScene2D(function* (view) {
       width={1920}
       padding={100}
       code={`\
-struct Constraint {
-    parameter: IdentifierId,
-    restrictions: HashSet<IdentifierId>,
-    used: bool,
+struct BinderStore {
+    binders: HashMap<ExpressionId, Binder>,
 }
 
-struct ConstraintStore {
-    constraints: HashMap<ExpressionId, Constraint>,
-}
-
-impl ConstraintStore {
+impl BinderStore {
 
 }`}
     />
@@ -41,23 +35,17 @@ impl ConstraintStore {
 
   yield* code().code(
     `\
-struct Constraint {
-    parameter: IdentifierId,
-    restrictions: HashSet<IdentifierId>,
-    used: bool,
+struct BinderStore {
+    binders: HashMap<ExpressionId, Binder>,
 }
 
-struct ConstraintStore {
-    constraints: HashMap<ExpressionId, Constraint>,
-}
-
-impl ConstraintStore {
-    fn set(&mut self, expression: ExpressionId, constraint: Constraint) {
-        self.constraints.insert(expression, constraint);
+impl BinderStore {
+    fn set(&mut self, expression: ExpressionId, binder: Binder) {
+        self.binders.insert(expression, binder);
     }
 
-    fn get(&self, expression: ExpressionId) -> Option<&Constraint> {
-        self.constraints.get(&expression)
+    fn get(&self, expression: ExpressionId) -> Option<&Binder> {
+        self.binders.get(&expression)
     }
 }`,
     1
@@ -67,23 +55,17 @@ impl ConstraintStore {
 
   yield* code().code(
     `\
-struct Constraint {
-    parameter: IdentifierId,
-    restrictions: HashSet<IdentifierId>,
-    used: bool,
+struct BinderStore {
+    binders: HashMap<ExpressionId, Binder>,
 }
 
-struct ConstraintStore {
-    constraints: HashMap<ExpressionId, Constraint>,
-}
-
-impl ConstraintStore {
-    fn set(&mut self, expression: ExpressionId, constraint: Constraint) {
-        self.constraints.insert(expression, constraint);
+impl BinderStore {
+    fn set(&mut self, expression: ExpressionId, binder: Binder) {
+        self.binders.insert(expression, binder);
     }
 
-    fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Constraint> {
-        self.constraints.get_mut(&expression)
+    fn get_mut(&mut self, expression: ExpressionId) -> Option<&mut Binder> {
+        self.binders.get_mut(&expression)
     }
 }`,
     1

@@ -19,8 +19,12 @@ export default makeScene2D(function* (view) {
       width={1920}
       padding={100}
       code={`\
-trait FreshVariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
+trait AdmissibleVariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId;
 }`}
     />
   );
@@ -31,15 +35,39 @@ trait FreshVariableNameGenerator {
 
   yield* code().code(
     `\
-trait FreshVariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
+trait AdmissibleVariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId;
 }
 
+// x, y, z, x1, y1, z1, x2, y2, z2, ...
+struct VariableNameGenerator { bases: Vec<Box<[u8]>> }`,
+    1
+  );
+
+  yield* beginSlide("variable-generator");
+
+  yield* code().code(
+    `\
+// x, y, z, x1, y1, z1, x2, y2, z2, ...
+struct VariableNameGenerator { bases: Vec<Box<[u8]>> }`,
+    1
+  );
+
+  yield* code().code(
+    `\
+// x, y, z, x1, y1, z1, x2, y2, z2, ...
 struct VariableNameGenerator { bases: Vec<Box<[u8]>> }
 
-// x, y, z, x1, y1, z1, x2, y2, z2, ...
-impl FreshVariableNameGenerator for VariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId {
+impl AdmissibleVariableNameGenerator for VariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId {
         
     }
 }`,
@@ -50,15 +78,15 @@ impl FreshVariableNameGenerator for VariableNameGenerator {
 
   yield* code().code(
     `\
-trait FreshVariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
-}
-
+// x, y, z, x1, y1, z1, x2, y2, z2, ...
 struct VariableNameGenerator { bases: Vec<Box<[u8]>> }
 
-// x, y, z, x1, y1, z1, x2, y2, z2, ...
-impl FreshVariableNameGenerator for VariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId {
+impl AdmissibleVariableNameGenerator for VariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId {
         let n = self.bases.len();
         let mut attempts = 0;
         let mut suffix = 0;
@@ -74,15 +102,15 @@ impl FreshVariableNameGenerator for VariableNameGenerator {
 
   yield* code().code(
     `\
-trait FreshVariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId;
-}
-
+// x, y, z, x1, y1, z1, x2, y2, z2, ...
 struct VariableNameGenerator { bases: Vec<Box<[u8]>> }
 
-// x, y, z, x1, y1, z1, x2, y2, z2, ...
-impl FreshVariableNameGenerator for VariableNameGenerator {
-    fn fresh_name(&mut self, strings: &mut StringArena, claimed: &HashSet<StringId>) -> StringId {
+impl AdmissibleVariableNameGenerator for VariableNameGenerator {
+    fn generate_admissible_name<F: Fn(StringId) -> bool>(
+        &mut self,
+        strings: &mut StringArena,
+        is_admissible: F,
+    ) -> StringId {
         let n = self.bases.len();
         let mut attempts = 0;
         let mut suffix = 0;
@@ -92,7 +120,7 @@ impl FreshVariableNameGenerator for VariableNameGenerator {
                 candidate.extend(suffix.to_string().as_bytes());
             }
             let id = strings.intern(&candidate);
-            if !claimed.contains(&id) {
+            if is_admissible(id) { {
                 return id;
             }
             attempts += 1;

@@ -366,8 +366,8 @@ impl<'a> BinderStoreBuilder<'a> {
 
                 let binder = self.binders.get_mut(binder_expression).unwrap();
                 binder.mark_used();
-                for avoid in undesirables {
-                    binder.add_string_undesirable(avoid);
+                for undesirable in undesirables {
+                    binder.add_string_undesirable(undesirable);
                 }
             }
             Expression::Abstraction { parameter, body } => {
@@ -473,11 +473,11 @@ impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
                 // `expression` is a bound nameless variable
                 let binder_expression = self.environment.lookup_binder(*index);
                 let binder = self.binders.get(binder_expression).unwrap();
-                let identifier = self
+                let name = self
                     .identifiers
                     .lookup(binder.destination_parameter)
                     .unwrap();
-                self.destination.variable(identifier)
+                self.destination.variable(name)
             }
             Expression::Abstraction {
                 parameter: source_parameter,
