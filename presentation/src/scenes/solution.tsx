@@ -24,7 +24,7 @@ export default makeScene2D(function* (view) {
         <Txt fontFamily={"Roboto"} fill={"white"}>
           Variables:
         </Txt>
-        <Latex tex={["u_i"]} fill="white" fontSize={54} marginTop={15} />
+        <Latex tex={["\\hat u_i"]} fill="white" fontSize={54} marginTop={-10} />
         <Txt fontFamily={"Roboto"} fill={"white"}>
           represents the parameter name for binder
         </Txt>
@@ -62,11 +62,11 @@ export default makeScene2D(function* (view) {
               2. If a variable is bound to a binder having parameter name
             </Txt>
             <Latex
-              tex={["u_i"]}
+              tex={["\\hat u_i"]}
               fill="white"
               fontSize={54}
               marginLeft={20}
-              marginTop={15}
+              marginTop={-10}
             />
             <Txt fontFamily={"Roboto"} fill={"white"}>
               , then the binders
@@ -77,12 +77,12 @@ export default makeScene2D(function* (view) {
               with a lesser distance cannot use parameter name
             </Txt>
             <Latex
-              tex={["u_i"]}
+              tex={["\\hat u_i"]}
               fill="white"
               fontSize={54}
               marginLeft={20}
               marginRight={20}
-              marginTop={15}
+              marginTop={-10}
             />
           </Layout>
         </Layout>
@@ -98,11 +98,11 @@ export default makeScene2D(function* (view) {
               3. If a variable is bound to a binder having parameter name
             </Txt>
             <Latex
-              tex={["u_i"]}
+              tex={["\\hat u_i"]}
               fill="white"
               fontSize={54}
               marginLeft={20}
-              marginTop={15}
+              marginTop={-10}
             />
             <Txt fontFamily={"Roboto"} fill={"white"}>
               , then
@@ -110,12 +110,12 @@ export default makeScene2D(function* (view) {
           </Layout>
           <Layout direction={"row"} marginLeft={35}>
             <Latex
-              tex={["u_i"]}
+              tex={["\\hat u_i"]}
               fill="white"
               fontSize={54}
               marginLeft={20}
               marginRight={20}
-              marginTop={15}
+              marginTop={-10}
             />
             <Txt fontFamily={"Roboto"} fill={"white"}>
               cannot use the parameter names for binders with lesser distances

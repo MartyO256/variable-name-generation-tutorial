@@ -147,7 +147,12 @@ export default makeScene2D(function* (view) {
       layout
     >
       <Layout width={50} height={50} layout>
-        <Latex ref={u1} tex={["u_1"]} fill="white" fontSize={50} />
+        <Latex
+          ref={u1}
+          tex={["\\vphantom{(}\\hat u_1"]}
+          fill="white"
+          fontSize={50}
+        />
       </Layout>
       <Latex
         ref={constraints1}
@@ -187,7 +192,12 @@ export default makeScene2D(function* (view) {
       layout
     >
       <Layout width={50} height={50} layout>
-        <Latex ref={u2} tex={["u_2"]} fill="white" fontSize={50} />
+        <Latex
+          ref={u2}
+          tex={["\\vphantom{(}\\hat u_2"]}
+          fill="white"
+          fontSize={50}
+        />
       </Layout>
       <Latex
         ref={constraints2}
@@ -268,7 +278,7 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("worked-example");
 
   yield* all(
-    u2().tex(["x"], 1),
+    u2().tex(["\\vphantom{(}x"], 1),
     lambda2().tex(["\\vphantom{(}\\lambda{}", "x", "."], 1)
   );
 

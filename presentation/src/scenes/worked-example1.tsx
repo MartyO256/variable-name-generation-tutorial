@@ -200,7 +200,12 @@ export default makeScene2D(function* (view) {
       layout
     >
       <Layout width={50} height={50} layout>
-        <Latex ref={u1} tex={["u_1"]} fill="white" fontSize={50} />
+        <Latex
+          ref={u1}
+          tex={["\\vphantom{(}\\hat u_1"]}
+          fill="white"
+          fontSize={50}
+        />
       </Layout>
       <Latex
         ref={constraints1}
@@ -240,7 +245,12 @@ export default makeScene2D(function* (view) {
       layout
     >
       <Layout width={50} height={50} layout>
-        <Latex ref={u2} tex={["u_2"]} fill="white" fontSize={50} />
+        <Latex
+          ref={u2}
+          tex={["\\vphantom{(}\\hat u_2"]}
+          fill="white"
+          fontSize={50}
+        />
       </Layout>
       <Latex
         ref={constraints2}
@@ -280,7 +290,12 @@ export default makeScene2D(function* (view) {
       layout
     >
       <Layout width={50} height={50} layout>
-        <Latex ref={u3} tex={["u_3"]} fill="white" fontSize={50} />
+        <Latex
+          ref={u3}
+          tex={["\\vphantom{(}\\hat u_3"]}
+          fill="white"
+          fontSize={50}
+        />
       </Layout>
       <Latex
         ref={constraints3}
@@ -317,9 +332,9 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* constraints3().tex(["\\{", "u_1", "\\}"], 1);
+  yield* constraints3().tex(["\\{", "\\hat u_1", "\\}"], 1);
 
-  yield* cursor2Set().tex(["\\{", "u_3", "\\}"], 1);
+  yield* cursor2Set().tex(["\\{", "\\hat u_3", "\\}"], 1);
 
   yield* beginSlide("worked-example");
 
@@ -327,9 +342,9 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* constraints2().tex(["\\{", "u_1", "\\}"], 1);
+  yield* constraints2().tex(["\\{", "\\hat u_1", "\\}"], 1);
 
-  yield* cursor2Set().tex(["\\{", "u_2", ",", "u_3", "\\}"], 1);
+  yield* cursor2Set().tex(["\\{", "\\hat u_2", ",", "\\hat u_3", "\\}"], 1);
 
   yield* beginSlide("worked-example");
 
@@ -337,7 +352,7 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* constraints1().tex(["\\{", "u_2", ",", "u_3", "\\}"], 1);
+  yield* constraints1().tex(["\\{", "\\hat u_2", ",", "\\hat u_3", "\\}"], 1);
 
   yield* all(
     cursor2().opacity(0, 1),
@@ -395,9 +410,9 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* constraints3().tex(["\\{", "u_1", ",", "u_2", "\\}"], 1);
+  yield* constraints3().tex(["\\{", "\\hat u_1", ",", "\\hat u_2", "\\}"], 1);
 
-  yield* cursor2Set().tex(["\\{", "u_3", "\\}"], 1);
+  yield* cursor2Set().tex(["\\{", "\\hat u_3", "\\}"], 1);
 
   yield* beginSlide("worked-example");
 
@@ -405,7 +420,7 @@ export default makeScene2D(function* (view) {
 
   yield* beginSlide("worked-example");
 
-  yield* constraints2().tex(["\\{", "u_1", ",", "u_3", "\\}"], 1);
+  yield* constraints2().tex(["\\{", "\\hat u_1", ",", "\\hat u_3", "\\}"], 1);
 
   yield* all(
     cursor2().opacity(0, 1),
@@ -470,10 +485,10 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("worked-example");
 
   yield* all(
-    u1().tex(["x"], 1),
+    u1().tex(["\\vphantom{(}x"], 1),
     lambda1().tex(["\\vphantom{(}\\lambda{}", "x", "."], 1),
-    constraints2().tex(["\\{", "x", ",", "u_3", "\\}"], 1),
-    constraints3().tex(["\\{", "x,", "u_2", "\\}"], 1)
+    constraints2().tex(["\\{", "x", ",", "\\hat u_3", "\\}"], 1),
+    constraints3().tex(["\\{", "x,", "\\hat u_2", "\\}"], 1)
   );
 
   yield* beginSlide("worked-example");
@@ -483,9 +498,9 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("worked-example");
 
   yield* all(
-    u2().tex(["y"], 1),
+    u2().tex(["\\vphantom{(}y"], 1),
     lambda2().tex(["\\vphantom{(}\\lambda{}", "y", "."], 1),
-    constraints1().tex(["\\{", "y", ",", "u_3", "\\}"], 1),
+    constraints1().tex(["\\{", "y", ",", "\\hat u_3", "\\}"], 1),
     constraints3().tex(["\\{", "x,", "y", "\\}"], 1)
   );
 
@@ -496,7 +511,7 @@ export default makeScene2D(function* (view) {
   yield* beginSlide("worked-example");
 
   yield* all(
-    u3().tex(["z"], 1),
+    u3().tex(["\\vphantom{(}z"], 1),
     constraints1().tex(["\\{", "y", ",", "z", "\\}"], 1),
     constraints2().tex(["\\{", "x", ",", "z", "\\}"], 1),
     lambda3().tex(["\\vphantom{(}\\lambda{}", "z", "."], 1)
