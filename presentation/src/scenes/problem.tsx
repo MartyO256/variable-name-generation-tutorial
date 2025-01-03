@@ -30,12 +30,12 @@ export default makeScene2D(function* (view) {
           marginRight={15}
         />
         <Txt fontFamily={"Roboto"} fill={"white"}>
-          with variables (free, bound by name, or bound by index)
+          with variables (named or nameless) and binders
         </Txt>
       </Layout>
       <Layout direction={"row"}>
         <Txt fontFamily={"Roboto"} fill={"white"}>
-          and binders (named or unnamed), generate an association
+          (named or nameless), generate an association
         </Txt>
         <Latex
           tex={["C"]}
@@ -45,12 +45,12 @@ export default makeScene2D(function* (view) {
           marginRight={15}
         />
         <Txt fontFamily={"Roboto"} fill={"white"}>
-          from binders to
+          from binders to names such
         </Txt>
       </Layout>
       <Layout direction={"row"}>
         <Txt fontFamily={"Roboto"} fill={"white"}>
-          names such that applying
+          that applying
         </Txt>
         <Latex
           tex={["C"]}

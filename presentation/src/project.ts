@@ -10,6 +10,7 @@ import workedExample2 from "./scenes/worked-example2?scene";
 import workedExample3 from "./scenes/worked-example3?scene";
 import workedExample4 from "./scenes/worked-example4?scene";
 import workedExample5 from "./scenes/worked-example5?scene";
+import repositoryLink from "./scenes/repository-link?scene";
 import grammar from "./scenes/grammar?scene";
 import ast from "./scenes/ast?scene";
 import expressionArena from "./scenes/expression-arena?scene";
@@ -41,6 +42,7 @@ export default makeProject({
     workedExample3,
     workedExample4,
     workedExample5,
+    repositoryLink,
     grammar,
     ast,
     expressionArena,

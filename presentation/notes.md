@@ -76,8 +76,8 @@ The domain for these parameter names is underscore, denoting that the parameter 
 For the untyped lambda calculus expressions we're dealing with, we can identify 4 constraints derived from the way variable names are resolved to binders.
 
 1. If a variable is free, then all parent or enclosing binders cannot use its name.
-2. If we reach a bound variable, and that bound variable is bound to a binder having parameter name $\hat u_i$, then the binders with a lesser distance cannot use parameter name $\hat u_i$.
-3. Conversely, if a variable is bound to a binder having parameter name $\hat u_i$, then $\hat u_i$ cannot use the parameter names for binders with lesser distances.
+2. If we reach a variable bound to a binder having parameter name $\hat u_i$, then the binders with a lesser distance cannot use parameter name $\hat u_i$.
+3. Conversely, if we reach a variable bound to a binder having parameter name $\hat u_i$, then $\hat u_i$ cannot use the parameter names for binders with lesser distances.
 4. Finally, every binder that is used must have a parameter name.
 
 ## Solution (continued)
@@ -89,12 +89,15 @@ To solve this constraint satisfaction problem, we'll proceed in 4 steps.
 3. With those data structures defined, we'll traverse the input expression and update the constraints for binders.
 4. Then, once we have those constraints, we'll re-traverse the input expression, this time to select admissible parameter names.
 
+Do note that the order in which parameter names are decided affects only the visual appeal of the resulting expression.
+We can select names in any order we like, provided we satisfy the constraints.
+
 Let's see this in action for the example expressions we saw earlier.
 
 ## Worked Example 1
 
 Starting off with the fully nameless expression.
-We start off by a traversal of the expression to construct and map constraints to binders.
+We first need to traverse the expression to construct and map constraints to binders.
 
 For this first outermost lambda abstraction, we'll assign variable $\hat u_1$ to stand for its parameter name.
 This variable has to be unique, but it stands for an undetermined name.
@@ -107,6 +110,10 @@ We repeat this constraint construction procedure for the other two binders.
 
 Next, we visit a nameless bound variable in the expression.
 Its corresponding binder is the outermost one, shown in cyan.
+As per the constraints we identified earlier, parameter names $\hat u_2$ and $\hat u_3$ must be different from $\hat u_1$.
+So, we add $\hat u_1$ to the restriction set for both inner binders.
+Additionally, as we're traversing from the innermost binder up to the binder for $\hat u_1$, we'll collect the parameter names for binders we encounter along the way.
+These parameter names have to be added to the restriction set for $\hat u_1$.
 We'll also mark $\hat u_1$ as used since we've found a variable that references it in the expression.
 
 Moving on to the next sub-expression.
@@ -115,6 +122,7 @@ We simply mark that parameter name as used and move on to the next sub-expressio
 
 We reach an unnamed variable referencing parameter $\hat u_2$.
 So, for parameter $\hat u_3$, we cannot assign a name equal to $\hat u_2$.
+We keep track of parameter name $\hat u_3$ to add it to the restriction set for $\hat u_2$.
 We also mark $\hat u_2$ as used.
 
 We again reach an unnamed variable referencing parameter $\hat u_3$.
@@ -132,6 +140,8 @@ Hence using our sequence of guesses for parameter names, we choose name $\hat u_
 This updates the restriction sets for $\hat u_2$ and $\hat u_3$, with $\hat u_1$ now instantiated as $x$.
 
 Moving on to the next binder.
+Here, $\hat u_2$ is used, but cannot be named $x$.
+At this point, we do not have a parameter name chosen for $\hat u_3$, so we can ignore it when we select the name for $\hat u_2$.
 Following our sequence, we'll choose name $\hat u_2$ equal to $y$.
 This updates the restriction sets for $\hat u_1$ and $\hat u_3$.
 
@@ -165,8 +175,6 @@ In this case, the parameter name is still $f$.
 Let's move to the next example expression, which contains a free variable.
 We proceed with the creation of constraints for the binders like in the previous examples.
 When we reach free variable $x$, we need to add its name to the set of restrictions for all parent abstractions.
-In the implementation, we create a new undetermined variable $u_3$ and assign it value $x$.
-This simplifies the data type for sets of restrictions.
 
 Once we have the constraints, we select names for the parameters as before.
 For this example, we could have two sequences of parameter names, one for variables and the other for functions.
@@ -216,16 +224,16 @@ This could work, but we're missing a key feature with this data representation.
 We won't be able to implement a mapping from binders to constraints.
 To do that, we need a way to uniquely refer to expressions in a region, and a way to map to and from such references.
 
-We solve this by using a flattened representation for expressions, with an arena allocation implemented as a vector of expressions.
+We solve this by using a flattened representation for expressions, with an arena allocator implemented as a vector of expressions.
 Here, within a given expression arena, expressions are uniquely referred to by their index in the vector.
-To construct maps with binders as keys, we'll be able to use a hash map, with expression IDs as keys.
+To construct a mapping from binders to constraints, we'll be able to use a hash map, with expression IDs acting as keys.
 
 Distinct expressions in an expression arena will have distinct expression IDs.
 This means that, for instance, each occurrence of a variable `x` in an expression has its own expression ID.
 
 We'll use a similar arena-based representation for strings.
 However here, two equal strings will have equal string IDs.
-This will speed up operations involving hash sets or hash maps of strings, since it is less expensive to hash an integer than it is to hash a string.
+This will speed up operations involving hash sets of strings or hash maps of strings, since it is less expensive to hash an integer than it is to hash a string.
 
 ## Expression Arena
 
@@ -288,7 +296,7 @@ The `bindings_map` field holds an assocation from parameter names in the input e
 This map allows use to perform lookups by name.
 The stacks held as values in the map allow us to represent the shadowing of bindings.
 
-We'll also store a stack of expressions for the lambda expressions.
+We'll also store a stack of expressions for the binders in the language.
 This will allow us to resolve nameless variables to their binders.
 
 - When we bind a name, we push the identifier onto the stack of bindings for that name, and push the binder expression onto the stack of binders.
@@ -296,35 +304,50 @@ This will allow us to resolve nameless variables to their binders.
 - When we lookup the latest identifier associated with a given name, we lookup the hash map and retrieve the last element pushed onto the stack of bindings.
 - When we want to iterate from the innermost binder to the outermost binder (from right to left in the examples), we need to iterate over the stack of binders in reverse order.
 
-## Constraints
+## Binders
 
-The constraints assigned to each binder in the expression are the identifier assigned for the parameter name, the set of identifiers that cannot be used for the parameter name, and a boolean flag to determine whether the parameter name is used.
+Let's define a `Binder` structure holding the hints for selecting admissible parameter names.
+We store the original source parameter as an optional string.
+Next, we store the destination parameter as an undetermined variable.
+Then, we add a hash set of restrictions, with each restriction being either a string or an identifier.
 
-We store these constraints in a hash map, mapping named and unnamed lambda expressions to constraints.
-We provide a `get` function to retrieve those constraints, and a `get_mut` function to retrieve mutable references to constraints.
+Just like in the examples, we'll traverse the input expression twice in top-down order.
+Because of this, we already know the order in which parameter names will be decided.
+So, we can split the hash set of restrictions into two, with the second part being the set of quote-unquote undesirable parameter names.
+These are the parameter names for binders in sub-expressions: if the parameter name for a parent binder is in that set, then we may have to perform renamings to ensure alpha-equivalence with the input expression.
+In most cases, these renamings can be avoided, and this set of undesirables is there precisely to minimize the occurrences of renamings.
 
-## Constraint Store Builder
+## Binder Store
+
+To store these binders, we use a sparse hash map data structure with expression IDs as keys.
+We provide a `get` function to retrieve the constraints for a given binder, as well as a `get_mut` function.
+
+## Binder Store Builder
 
 With all these helper data structures defined, we've now reached the point where we need to traverse the input expression and build constraints for the binder parameter names.
 We store all the traversal state data in the `ConstraintStoreBuilder` fields, and implement a recursive `visit` function.
 
 - In the case where the expression is a lambda abstraction, we create a new identifier for its parameter name. Next, we construct a new constraint and assign it to the `expression`. Then, we check if the parameter has a user-defined name. If it does, we bind it in the referencing environment, then we recurse on the lambda expression's body, and finally we unbind the parameter. If the lambda expression does not have a user-defined name, we shift the referencing environment then we recurse on the lambda expression's body, and finally we unshift the referencing environment.
 - In the case where the expression is a nameless abstraction, we proceed much like in the previous case. We create an identifier for the parameter, create a constraint and map it to the expression, shift the referencing environment, recurse on the lambda expression's body, and unshift the referencing environment.
-- In the case where the expression is a named variable, we need to resolve the variable to an identifier. We lookup the referencing environment by name to see if the variable is bound or free. If it is bound, then we already have an identifier for it as defined in some parent lambda abstraction. If the variable is free, then we create a new identifier for it and immediately assign the variable's name as the name for the identifier. Next, we need to traverse all the parent binder expressions until we reach the binder for the variable (if one exists). For each binder, we mutably get the constraint mapped to it, and add the variable identifier to the set of restrictions. We have an early loop termination condition if we reach the binder for the variable, in which case we also update the `used` flag for it.
-- In the case where the expression is a nameless variable, we similarly need to resolve the variable to an identifier. We lookup the referencing environment by index using the stack of binders. Then, we get the constraint assigned to the binder, and extract the parameter identifier from it. Next, we iterate over the binders that are parent to the nameless variable up to but not including the variable's binder. For those sub-binders, we add the nameless variable to the set of restrictions. We simultaneously collect the set of parameters for the sub-binders we encounter along the way. Those collected identifiers have to be added to the set of restrictions for the nameless variable's binder.
-- In the case where the expression is an application, we just recursively traverse the function sub-expression and its argument sub-expressions.
+- In the case where the expression is a named variable, we need to resolve the variable to an identifier. We lookup the referencing environment by name to see if the variable is bound or free.
+  - If it is bound, then we already have an identifier for it as defined in some parent lambda abstraction. Like we did in the examples, we'll traverse the stack of binders until we reach the binder for the variable. Along the way, we'll collect the names of parameters for the other binders. Those names are to be avoided for the variable's binder because if we select one of them, we may end up doing unnecessary parameter renamings. We'll also add the variable's corresponding parameter identifier to the set of restrictions for the nested lambda abstractions. Don't forget to mark the parameter as used.
+  - If the variable is free, then we create a new identifier for it and immediately assign the variable's name as the name for the identifier. Next, we traverse all the parent binder expressions. For each of them, we mutably get the constraint mapped to it, and add the variable identifier to the set of restrictions.
+- In the case where the expression is a nameless variable, we resolve the variable to an identifier. To do this, we lookup the referencing environment by index using the stack of binders. Then, we get the constraint assigned to the binder, and extract its source and destination parameters. Like in the named abstraction case, we iterate over the binders that are parent to the nameless variable up to but not including the variable's binder. For those sub-binders, we add the nameless variable to the set of restrictions. We simultaneously collect the set of parameters for the sub-binders we encounter along the way. Those collected identifiers are added to the set of parameter names to avoid.
+- In the case where the expression is an application, we just recursively visit the function sub-expression and its argument sub-expressions.
 
 ## Variable Name Generation
 
-Now let's brifely go over the implementation for the sequence of guesses for admissible variable names.
+Now let's go over the implementation for the sequence of guesses for admissible variable names.
 To generate a fresh variable name, we need a mutable reference to the arena of strings since we're generating new strings and need to have them interned.
-We also need the set of claimed strings, meaning those variable names that cannot be used at the time the `fresh_name` function is called.
+We also need a predicate to check if a generated name is admissible.
+As we'll see later, this predicate will perform lookups in sets of restricted or undesirable identifiers.
 
 For the sequence of variable names `x`, `y`, `z`, `x1`, `y1`, `z1`, and so on, we store a vector of bases containing the names `x`, `y` and `z`.
 Then, we go into a loop where we build the next guess for a variable.
 For each guess, we pick the next base name in the sequence.
 We also update the numeric suffix based on the number of attempts we've done so far.
-We know this loop must terminate since each attempt generates a different string from the ones we generated previously, and there are finitely many strings in the set `claimed`.
+This loop terminates only if the admissibility predicate returns `true` for some generated name.
+Since our predicates are implemented by querying finite sets of names, we know this will terminate because each attempt generates a different string from the ones generated previously.
 
 ## Conversion to Named Representation
 
@@ -347,7 +370,7 @@ This will be necessary to evaluate the set of restrictions for a parameter into 
 Let's call our AST traversal function `convert_to_named`.
 We proceed by pattern-matching on the source expression.
 
-- In the case where the expression is an abstraction, we lookup the constraints mapped to it. Next we need to choose a name for the parameter. If the abstraction already had an initial string parameter, we need to check if a renaming is required. So, we lookup the restriction set and check if that initial parameter name is inadmissible. If it is, then we generate a new fresh name for it. Otherwise, we use the existing name. In both of these cases, we also update the identifier store to reflect that we've chosen a name for that parameter. In the case where the initial parameter was not named, we check whether the parameter is actually used. If it is, then we generate a fresh name and assign it to the parameter. If the parameter is not used, then we return `None` so that it is represented as an underscore. Now that we've chosen a parameter name, we need to recursively convert the lambda abstraction's body. Like in the constraint store builder step, we update the state of the referencing environment accordingly. Note that since we're traversing the source expression, we introduce a binding for the original parameter name, such that when we lookup a source named variable, we can resolve it to the new parameter name.
+- In the case where the expression is an abstraction, we lookup the constraints mapped to it. Next we need to choose a name for the parameter. If the abstraction already had an initial string parameter, we need to check if a renaming is required. So, we lookup the restriction set and check if that initial parameter name is inadmissible. If it is, then we generate a new fresh name for it, one that is neither restricted nor undesirable. Otherwise, we use the existing name. In both of these cases, we also update the identifier store to reflect that we've chosen a name for that parameter. In the case where the initial parameter was not named, we check whether the parameter is actually used. If it is, then we generate a fresh name and assign it to the parameter. If the parameter is not used, then we return `None` so that it is represented as an underscore. Now that we've chosen a parameter name, we need to recursively convert the lambda abstraction's body. Like in the constraint store builder step, we update the state of the referencing environment accordingly. Note that since we're traversing the source expression, we introduce a binding for the original parameter name, such that when we lookup a source named variable, we can resolve it to the new parameter name.
 - In the case where the expression is a nameless abstraction, we proceed in a similar fashion as in the previous case. We lookup the constraints for the parameter name, then we check if the parameter is used. If it is, then we generate a fresh name for it. Otherwise, we'll use underscore as parameter name. We then recurse on the abstraction's body and construct the output named abstraction.
 - In the case where the expression is a named variable, we check using the referencing environment whether the variable is free or bound. If it is bound, then we lookup the value of the identifier, which was set when we selected parameter names for abstractions. If the variable is free, then by definition it does not have a corresponding binder, so we use its existing name.
 - In the case where the expression is a nameless variable, we simply lookup the variable's binder using the stack of binders and the variable's index. Then we lookup the parameter identifier assigned to that binder, evaluate the identifier to a string, and construct the named variable.

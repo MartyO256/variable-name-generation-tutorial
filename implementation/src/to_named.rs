@@ -319,8 +319,8 @@ impl<'a> BinderStoreBuilder<'a> {
                         let binder = self.binders.get_mut(*binder_expression).unwrap();
                         if binder.destination_parameter == identifier {
                             // Found the binder for bound variable `expression`
-                            for avoid in undesirables {
-                                binder.add_string_undesirable(avoid);
+                            for undesirable in undesirables {
+                                binder.add_string_undesirable(undesirable);
                             }
                             binder.mark_used();
                             break;

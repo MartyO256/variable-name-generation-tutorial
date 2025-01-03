@@ -532,8 +532,8 @@ impl<'a> BinderStoreBuilder<'a> {
                     for binder_expression in self.environment.binders_iter() {
                         let binder = self.binders.get_mut(*binder_expression).unwrap();
                         if binder.destination_parameter == identifier {
-                            for avoid in undesirables {
-                                binder.add_string_undesirable(avoid);
+                            for undesirable in undesirables {
+                                binder.add_string_undesirable(undesirable);
                             }
                             binder.mark_used();
                             break;
@@ -564,8 +564,8 @@ impl<'a> BinderStoreBuilder<'a> {
                     for binder_expression in self.environment.binders_iter() {
                         let binder = self.binders.get_mut(*binder_expression).unwrap();
                         if binder.destination_parameter == identifier {
-                            for avoid in undesirables {
-                                binder.add_string_undesirable(avoid);
+                            for undesirable in undesirables {
+                                binder.add_string_undesirable(undesirable);
                             }
                             binder.mark_used();
                             break;
@@ -690,7 +690,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
             }
         }
     }
@@ -706,7 +706,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = {
                     let binder = self.binders.get(binder_expression).unwrap();
                     (binder.source_parameter, binder.destination_parameter)
@@ -726,7 +726,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
             }
         }
@@ -741,7 +741,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
                 let mut undesirables = Vec::new();
             }
@@ -759,7 +759,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
                 let mut undesirables = Vec::new();
                 for sub_binder_expression in
@@ -782,7 +782,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
                 let mut undesirables = Vec::new();
                 for sub_binder_expression in
@@ -807,7 +807,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
                 let mut undesirables = Vec::new();
                 for sub_binder_expression in
@@ -838,7 +838,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
                 let mut undesirables = /* ... */;
             }
@@ -854,7 +854,7 @@ impl<'a> BinderStoreBuilder<'a> {
     fn visit(&mut self, expression: ExpressionId) {
         match &self.expressions[expression] {
             Expression::NamelessVariable { index } => {
-                let binder = self.environment.lookup_binder(*index);
+                let binder_expression = self.environment.lookup_binder(*index);
                 let (binder_source_parameter_name, binder_destination_parameter_identifier) = /* ... */;
                 let mut undesirables = /* ... */;
                 let binder = self.binders.get_mut(binder_expression).unwrap();
