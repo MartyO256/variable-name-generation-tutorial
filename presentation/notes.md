@@ -43,7 +43,7 @@ Because of the parameter name $f$ in the outermost abstraction, the variable nam
 When we select a name for the second abstraction, we have to avoid reusing the name $f$.
 
 ```
-λ. λ. 2 x 1 => λf. λz. f x y
+λ. λ. 2 x 1 => λf. λy. f x y
 ```
 
 In this third expression, the variable $x$ is free.
