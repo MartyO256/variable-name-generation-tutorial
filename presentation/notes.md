@@ -293,7 +293,7 @@ We'll need a representation for the state of identifiers in scope and what they 
 For this, we introduce this referencing environment structure.
 
 The `bindings_map` field holds an assocation from parameter names in the input expression to a stack of undetermined identifiers.
-This map allows use to perform lookups by name.
+This map allows us to perform lookups by name.
 The stacks held as values in the map allow us to represent the shadowing of bindings.
 
 We'll also store a stack of expressions for the binders in the language.
@@ -332,7 +332,7 @@ We store all the traversal state data in the `BinderStoreBuilder` fields, and im
 - In the case where the expression is a named variable, we need to resolve the variable to an identifier. We lookup the referencing environment by name to see if the variable is bound or free.
   - If it is bound, then we already have an identifier for it as defined in some parent lambda abstraction. Like we did in the examples, we'll traverse the stack of binders until we reach the binder for the variable. Along the way, we'll collect the names of parameters for the other binders. Those names are to be avoided for the variable's binder because if we select one of them, we may end up doing unnecessary parameter renamings. We'll also add the variable's corresponding parameter identifier to the set of restrictions for the nested lambda abstractions. Don't forget to mark the parameter as used.
   - If the variable is free, then we traverse all the parent binder expressions and mutably get the constraints mapped to them. We add the variable name to their sets of restrictions.
-- In the case where the expression is a nameless variable, we resolve the variable to an identifier. To do this, we lookup the referencing environment by index using the stack of binders. Then, we get the constraint assigned to the binder, and extract its source and destination parameters. Like in the named abstraction case, we iterate over the binders that are parent to the nameless variable up to but not including the variable's binder. For those sub-binders, we add the nameless variable to the set of restrictions. We simultaneously collect the set of parameters for the sub-binders we encounter along the way. Those collected identifiers are added to the set of parameter names to avoid.
+- In the case where the expression is a nameless variable, we resolve the variable to an identifier. To do this, we lookup the referencing environment by index using the stack of binders. Then, we get the constraint assigned to the binder, and extract its source and destination parameters. Like in the named variable case, we iterate over the binders that are parent to the nameless variable up to but not including the variable's binder. For those sub-binders, we add the nameless variable to the set of restrictions. We simultaneously collect the set of parameters for the sub-binders we encounter along the way. Those collected identifiers are added to the set of parameter names to avoid.
 - In the case where the expression is an application, we just recursively visit the function sub-expression and its argument sub-expressions.
 
 ## Variable Name Generation
