@@ -1,0 +1,15 @@
+This tutorial demonstrates how to implement the conversion of expressions to a named representation by soundly generating variable names. This is solved by formulating sound parameter name generation as a constraint satisfaction problem.
+
+GitHub repository:
+https://github.com/MartyO256/variable-name-generation-tutorial
+
+00:00 - Introduction
+01:25 - Problem Statement
+03:23 - Solution Overview
+05:27 - Example 1
+09:06 - Example 2
+10:27 - Example 3
+11:34 - Example 4
+12:16 - Example 5
+13:44 - Implementation
+28:27 - Conclusion
