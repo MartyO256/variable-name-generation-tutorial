@@ -1,6 +1,6 @@
 # Variable Name Generation Tutorial - Presentation
 
-This directory contains the [Motion Canvas](https://motioncanvas.io/) project for the [video](https://youtu.be/6oOjqMFtGcU).
+This directory contains the [Motion Canvas](https://motioncanvas.io/) project for the [video](https://youtu.be/DtaWjKkLg1A).
 
 ## Prerequisites
 

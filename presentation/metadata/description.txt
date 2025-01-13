@@ -12,4 +12,4 @@ https://github.com/MartyO256/variable-name-generation-tutorial
 11:34 - Example 4
 12:16 - Example 5
 13:44 - Implementation
-28:27 - Conclusion
+28:25 - Conclusion
