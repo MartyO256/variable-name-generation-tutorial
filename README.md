@@ -54,6 +54,6 @@ presentation/
 
 ## Watch the Tutorial Video
 
-[![Watch the tutorial on YouTube](https://img.youtube.com/vi/DtaWjKkLg1A/maxresdefault.jpg)](https://youtu.be/DtaWjKkLg1A)
+[![Watch the tutorial on YouTube](https://img.youtube.com/vi/3TdDwkXtBd0/maxresdefault.jpg)](https://youtu.be/3TdDwkXtBd0)
 
-Click the image or [watch the tutorial on YouTube](https://youtu.be/DtaWjKkLg1A) to follow along step by step.
+Click the image or [watch the tutorial on YouTube](https://youtu.be/3TdDwkXtBd0) to follow along step by step.

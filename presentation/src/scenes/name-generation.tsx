@@ -596,7 +596,7 @@ impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
                 let chosen_parameter = /* ... */;
                 match source_parameter {
                     Option::Some(name) => {
-                        self.environment.bind(*name, *parameter, expression);
+                        self.environment.bind(*name, binder.destination_parameter, expression);
                         let named_body = self.convert_to_named(*body);
                         self.environment.unbind(*name);
                         self.destination.abstraction(chosen_parameter, named_body)
@@ -626,7 +626,7 @@ impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
                 let chosen_parameter = /* ... */;
                 match source_parameter {
                     Option::Some(name) => {
-                        self.environment.bind(*name, *parameter, expression);
+                        self.environment.bind(*name, binder.destination_parameter, expression);
                         let named_body = self.convert_to_named(*body);
                         self.environment.unbind(*name);
                         self.destination.abstraction(chosen_parameter, named_body)
@@ -789,7 +789,7 @@ struct NameGeneration<'a, G: AdmissibleVariableNameGenerator> { /* ... */ }
 impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Variable { identifier } => {
+            Expression::Variable { identifier: name } => {
             
             }
         }
@@ -807,7 +807,7 @@ struct NameGeneration<'a, G: AdmissibleVariableNameGenerator> { /* ... */ }
 impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Variable { identifier } => {
+            Expression::Variable { identifier: name } => {
                 match self.environment.lookup(*name) {
                     Option::Some(identifier) => {
 
@@ -832,7 +832,7 @@ struct NameGeneration<'a, G: AdmissibleVariableNameGenerator> { /* ... */ }
 impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Variable { identifier } => {
+            Expression::Variable { identifier: name } => {
                 match self.environment.lookup(*name) {
                     Option::Some(identifier) => {
                         let assigned_name = self.identifiers.lookup(identifier).unwrap();
@@ -858,7 +858,7 @@ struct NameGeneration<'a, G: AdmissibleVariableNameGenerator> { /* ... */ }
 impl<'a, G: AdmissibleVariableNameGenerator> NameGeneration<'a, G> {
     fn convert_to_named(&mut self, expression: ExpressionId) -> ExpressionId {
         match &self.source[expression] {
-            Expression::Variable { identifier } => {
+            Expression::Variable { identifier: name } => {
                 match self.environment.lookup(*name) {
                     Option::Some(identifier) => {
                         let assigned_name = self.identifiers.lookup(identifier).unwrap();

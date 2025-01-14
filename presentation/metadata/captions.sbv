@@ -786,3 +786,219 @@ To do this, we lookup the referencing environment by index using the stack of bi
 
 0:23:13.176,0:23:19.199
 Then, we get the constraint assigned to the binder, and extract its source and destination parameters.
+
+0:23:20.000,0:23:25.191
+Like in the named variable case, we iterate over the binders that are parent to the nameless variable
+
+0:23:25.191,0:23:27.884
+up to but not including the variable's binder.
+
+0:23:28.569,0:23:33.476
+For those sub-binders, we add the nameless variable to the set of restrictions.
+
+0:23:33.476,0:23:38.584
+We simultaneously collect the set of parameters for the sub-binders we encounter along the way.
+
+0:23:38.584,0:23:43.447
+Those collected identifiers are added to the set of parameter names to avoid.
+
+0:23:45.102,0:23:53.248
+In the case where the expression is an application, we just recursively visit the function sub-expression and its argument sub-expressions.
+
+0:23:53.248,0:23:58.586
+Now let's go over the implementation for the sequence of guesses for admissible variable names.
+
+0:23:58.586,0:24:07.194
+To generate a fresh variable name, we need a mutable reference to the arena of strings since we're generating new strings and need to have them interned.
+
+0:24:07.194,0:24:11.196
+We also need a predicate to check if a generated name is admissible.
+
+0:24:11.196,0:24:18.632
+As we'll see later, this predicate will perform lookups in sets of restricted or undesirable identifiers.
+
+0:24:18.632,0:24:27.345
+For the sequence of variable names x, y, z, x1, y1, z1, and so on, we store a vector of bases containing the names x, y and z.
+
+0:24:27.345,0:24:31.905
+Then, we go into a loop where we build the next guess for a variable.
+
+0:24:31.905,0:24:35.675
+For each guess, we pick the next base name in the sequence.
+
+0:24:35.675,0:24:40.240
+We also update the numeric suffix based on the number of attempts we've done so far.
+
+0:24:40.240,0:24:46.206
+This loop terminates only if the admissibility predicate returns true for some generated name.
+
+0:24:46.206,0:24:50.565
+Since our predicates are implemented by querying finite sets of names,
+
+0:24:50.565,0:24:56.721
+we know this will terminate because each attempt generates a different string from the ones generated previously.
+
+0:24:56.721,0:25:00.963
+We now have all the pieces required to select admissible parameter names.
+
+0:25:00.963,0:25:06.272
+We'll traverse a source expression top-down and construct a destination expression.
+
+0:25:06.272,0:25:10.665
+For this NameGeneration struct, we'll need: the arena of strings;
+
+0:25:10.665,0:25:19.418
+the arena of source expressions; the arena of destination expressions; the store of undetermined identifiers for parameter names and restrictions
+
+0:25:19.418,0:25:27.448
+the store of constraints on parameter names; the referencing environment to resolve named and unnamed variables to their binders;
+
+0:25:27.448,0:25:32.378
+and finally a variable name generator creating streams of strings.
+
+0:25:32.378,0:25:37.758
+We start by defining a helper function to convert a set of identifiers into a set of strings.
+
+0:25:37.758,0:25:45.462
+This will be necessary to evaluate the set of restrictions for a parameter into its corresponding set of inadmissible strings.
+
+0:25:45.462,0:25:49.650
+Let's call our AST traversal function convert_to_named.
+
+0:25:49.650,0:25:52.801
+We proceed by pattern-matching on the source expression.
+
+0:25:52.801,0:25:57.961
+In the case where the expression is an abstraction, we lookup the constraints mapped to it.
+
+0:25:57.961,0:26:01.082
+Next we need to choose a name for the parameter.
+
+0:26:01.082,0:26:07.202
+If the abstraction already had an initial string parameter, we need to check if a renaming is required.
+
+0:26:07.202,0:26:12.629
+So, we lookup the restriction set and check if that initial parameter name is inadmissible.
+
+0:26:12.629,0:26:19.568
+If it is, then we generate a new fresh name for it, one that is neither restricted nor undesirable.
+
+0:26:19.568,0:26:22.426
+Otherwise, we use the existing name.
+
+0:26:22.426,0:26:29.446
+In both of these cases, we also update the identifier store to reflect that we've chosen a name for that parameter.
+
+0:26:29.446,0:26:35.204
+In the case where the initial parameter was not named, we check whether the parameter is actually used.
+
+0:26:35.204,0:26:39.271
+If it is, then we generate a fresh name and assign it to the parameter.
+
+0:26:41.251,0:26:47.600
+If the parameter is not used, then we return None so that it is represented as an underscore.
+
+0:26:47.600,0:26:53.637
+Now that we've chosen a parameter name, we need to recursively convert the lambda abstraction's body.
+
+0:26:53.637,0:26:59.326
+Like in the constraint store builder step, we update the state of the referencing environment accordingly.
+
+0:26:59.326,0:27:02.479
+Note that since we're traversing the source expression,
+
+0:27:02.479,0:27:12.234
+we introduce a binding for the original parameter name, such that when we lookup a source named variable, we can resolve it to the new parameter name.
+
+0:27:12.234,0:27:18.507
+In the case where the expression is a nameless abstraction, we proceed in a similar fashion as in the previous case.
+
+0:27:18.507,0:27:26.031
+We lookup the constraints for the parameter name, then we check if the parameter is used. If it is, then we generate a fresh name for it.
+
+0:27:27.189,0:27:30.560
+Otherwise, we'll use underscore as parameter name.
+
+0:27:30.560,0:27:35.214
+We then recurse on the abstraction's body and construct the output named abstraction.
+
+0:27:35.977,0:27:43.650
+In the case where the expression is a named variable, we check using the referencing environment whether the variable is free or bound.
+
+0:27:43.650,0:27:50.887
+If it is bound, then we lookup the value of the identifier, which was set when we selected parameter names for abstractions.
+
+0:27:50.887,0:27:57.844
+If the variable is free, then by definition it does not have a corresponding binder, so we use its existing name.
+
+0:27:57.844,0:28:05.925
+In the case where the expression is a nameless variable, we simply lookup the variable's binder using the stack of binders and the variable's index.
+
+0:28:05.925,0:28:14.594
+Then we lookup the parameter identifier assigned to that binder, evaluate the identifier to a string, and construct the named variable.
+
+0:28:14.594,0:28:18.146
+Finally, in the case where the expression is an application,
+
+0:28:18.146,0:28:25.001
+we just recursively convert the function and argument sub-expressions to named representation and re-build an application.
+
+0:28:27.001,0:28:32.499
+In conclusion, we've seen how to implement a sound fresh variable name generation algorithm
+
+0:28:32.499,0:28:37.487
+for expressions in a lambda calculus having both named and unnamed variables.
+
+0:28:37.487,0:28:43.266
+he approach we implemented relied on having a flat arena-based representation for the abstract syntax tree,
+
+0:28:43.266,0:28:46.505
+such that we could easily map from binders to constraints.
+
+0:28:46.505,0:28:50.334
+We formulated name generation as a constraint satisfaction problem,
+
+0:28:50.334,0:28:57.046
+and implemented a two-phase algorithm that builds constraints and then selects parameter names satisfying those constraints.
+
+0:28:57.046,0:29:00.984
+Now, this implementation was for a simple calculus by design.
+
+0:29:00.984,0:29:06.602
+We could extend this in many ways to accomodate the requirements of a more realistic programming language.
+
+0:29:06.602,0:29:12.891
+Specifically, we could extend the AST with a variant for referencing constants in namespaces.
+
+0:29:12.891,0:29:22.097
+In that case, we would need to consider the first segment in fully qualified identifiers as an identifier appearing in the set of restrictions for parent binders.
+
+0:29:22.097,0:29:27.093
+This ensures that name generation does not shadow a used namespace.
+
+0:29:27.093,0:29:32.727
+We could also improve the variable name selection using type information generated during type-checking.
+
+0:29:32.727,0:29:39.370
+This would allow us to generate different kinds of names based on whether the variable stands for a function or a ground value.
+
+0:29:39.370,0:29:43.655
+Similarly, we could extend the language with datatype declarations.
+
+0:29:43.655,0:29:50.264
+We could then provide a mechanism for the user to specify a template for variable names for values of that type.
+
+0:29:50.264,0:29:56.973
+Finally, we could keep track of the parameter names used for the parent binders when we generate a fresh variable name.
+
+0:29:56.973,0:30:01.667
+This would allow us to add some form of constraint to discourage variable name shadowing.
+
+0:30:01.667,0:30:09.344
+Indeed, our current algorithm will always use the first admissible parameter name, so shadowing is bound to occur more often.
+
+0:30:09.344,0:30:13.591
+Discouraging that would improve the readability of output named expressions.
+
+0:30:14.281,0:30:16.565
+Thanks for watching, and happy coding!
