@@ -23,14 +23,12 @@ The algorithm supports performing the following conversions:
        λx. λx. 2 1   =>   λx. λy. x y
 ```
 
-Formally, the grammar for this language is as follows, where `x` ranges over alphanumeric strings and `i` ranges over de Bruijn indices starting at 1:
+Formally, the grammar for this language is as follows, where `x` ranges over identifiers (`[a-zA-Z][a-zA-Z0-9]*`) and `i` ranges over de Bruijn indices starting at 1:
 
 ```
-<mixed-expression> ::= <named-expression> | <nameless-expression>
-
-<named-expression> ::= x | λx. <named-expression> | <named-expression> <named-expression>
-
-<nameless-expression> ::= i | λ. <nameless-expression> | <nameless-expression> <nameless-expression>
+<expr> ::= x | λx. <expr> | <expr> <expr> | i | λ. <expr>
+           ^^^^^^^^^^^^^^                   ^^^^^^^^^^^^^
+           Named                            Nameless
 ```
 
 This project is split into:
